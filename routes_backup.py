@@ -7,7 +7,6 @@ from forms import ProjectForm, ActivityForm, ScheduleForm, DocumentUploadForm, D
 from utils import calculate_schedule_metrics, export_schedule_to_excel, generate_schedule_pdf
 from import_utils import import_schedule_file, FiveDScheduleManager
 from datetime import datetime, date, timedelta
-from sqlalchemy import or_
 import json
 import pandas as pd
 from io import BytesIO
@@ -399,9 +398,11 @@ def api_project_activities(project_id):
             'end_date': activity.end_date.isoformat() if activity.end_date else None,
             'duration': activity.duration,
             'progress': activity.progress,
-            'activity_type': activity.activity_type.value if activity.activity_type else 'construction',
+            'activity_type': activity.activity_type.value,
             'location_start': activity.location_start,
-            'location_end': activity.location_end
+            'location_end': activity.location_end,
+            'predecessors': activity.get_predecessor_ids(),
+            'successors': activity.get_successor_ids()
         })
     
     dependencies_data = []
@@ -411,17 +412,15 @@ def api_project_activities(project_id):
             'predecessor_id': dep.predecessor_id,
             'successor_id': dep.successor_id,
             'dependency_type': dep.dependency_type,
-            'lag_days': dep.lag_days or 0
+            'lag_days': dep.lag_days
         })
     
     return jsonify({
-        'success': True,
         'activities': activities_data,
         'dependencies': dependencies_data
     })
 
 @app.route('/project/<int:project_id>/export/excel')
-@login_required
 def export_excel(project_id):
     """Export project schedule to Excel"""
     project = Project.query.get_or_404(project_id)
@@ -431,7 +430,6 @@ def export_excel(project_id):
     return send_file(filepath, as_attachment=True, download_name=f'{project.name}_schedule.xlsx')
 
 @app.route('/project/<int:project_id>/export/pdf')
-@login_required
 def export_pdf(project_id):
     """Export project schedule to PDF"""
     project = Project.query.get_or_404(project_id)
@@ -440,7 +438,9 @@ def export_pdf(project_id):
     filepath = generate_schedule_pdf(project, activities)
     return send_file(filepath, as_attachment=True, download_name=f'{project.name}_schedule.pdf')
 
-# ========== ADDITIONAL API ENDPOINTS ==========
+# ========== API ENDPOINTS ==========
+
+
 
 @app.route('/api/dashboard/metrics')
 def api_dashboard_metrics():
@@ -528,108 +528,6 @@ def api_update_activity_progress(project_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/projects/search', methods=['GET'])
-@login_required
-def api_search_projects():
-    """API endpoint for project search with filters"""
-    try:
-        query = request.args.get('q', '')
-        status = request.args.get('status', 'all')
-        limit = int(request.args.get('limit', 10))
-        
-        projects_query = Project.query
-        
-        # Apply search query
-        if query:
-            projects_query = projects_query.filter(
-                or_(
-                    Project.name.ilike(f'%{query}%'),
-                    Project.description.ilike(f'%{query}%'),
-                    Project.location.ilike(f'%{query}%')
-                )
-            )
-        
-        # Apply status filter
-        if status != 'all':
-            projects_query = projects_query.filter(Project.status == ProjectStatus(status))
-        
-        projects = projects_query.limit(limit).all()
-        
-        projects_data = []
-        for project in projects:
-            # Calculate completion percentage
-            activities = Activity.query.filter_by(project_id=project.id).all()
-            if activities:
-                completion = sum([a.progress for a in activities]) / len(activities)
-            else:
-                completion = 0
-            
-            projects_data.append({
-                'id': project.id,
-                'name': project.name,
-                'description': project.description,
-                'status': project.status.value,
-                'location': project.location,
-                'budget': float(project.budget) if project.budget else 0,
-                'completion_percentage': completion,
-                'start_date': project.start_date.strftime('%Y-%m-%d') if project.start_date else None,
-                'end_date': project.end_date.strftime('%Y-%m-%d') if project.end_date else None,
-                'created_at': project.created_at.isoformat() if project.created_at else None
-            })
-        
-        return jsonify({
-            'success': True,
-            'projects': projects_data,
-            'count': len(projects_data)
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-@app.route('/api/project/<int:project_id>/activities/overdue', methods=['GET'])
-@login_required
-def api_overdue_activities(project_id):
-    """API endpoint for overdue activities"""
-    try:
-        project = Project.query.get_or_404(project_id)
-        today = datetime.now().date()
-        
-        overdue_activities = Activity.query.filter(
-            Activity.project_id == project_id,
-            Activity.end_date < today,
-            Activity.progress < 100
-        ).all()
-        
-        activities_data = []
-        for activity in overdue_activities:
-            days_overdue = (today - activity.end_date).days
-            activities_data.append({
-                'id': activity.id,
-                'name': activity.name,
-                'end_date': activity.end_date.strftime('%Y-%m-%d'),
-                'progress': activity.progress,
-                'days_overdue': days_overdue,
-                'cost_estimate': float(activity.cost_estimate) if activity.cost_estimate else 0,
-                'actual_cost': float(activity.actual_cost) if activity.actual_cost else 0
-            })
-        
-        return jsonify({
-            'success': True,
-            'project_id': project_id,
-            'project_name': project.name,
-            'overdue_activities': activities_data,
-            'count': len(activities_data)
-        })
-        
-    except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
