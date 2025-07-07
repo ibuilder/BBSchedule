@@ -268,6 +268,29 @@ def edit_activity(activity_id):
         flash('Error editing activity', 'error')
         return redirect(url_for('index'))
 
+@app.route('/activity/<int:activity_id>/delete', methods=['POST'])
+@login_required
+def delete_activity(activity_id):
+    """Delete an activity."""
+    try:
+        user_id = session.get('user_id')
+        activity = Activity.query.get_or_404(activity_id)
+        project_id = activity.project_id
+        activity_name = activity.name
+        
+        db.session.delete(activity)
+        db.session.commit()
+        
+        flash(f'Activity "{activity_name}" deleted successfully', 'success')
+        log_activity(user_id, f"Deleted activity {activity_name}")
+        
+        return redirect(url_for('project_detail', project_id=project_id))
+        
+    except Exception as e:
+        log_error(e, f"Delete activity error for activity {activity_id}")
+        flash('Error deleting activity', 'error')
+        return redirect(url_for('index'))
+
 @app.route('/gantt')
 @login_required
 def gantt_chart():
