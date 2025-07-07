@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Gantt Chart - BBSchedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i data-feather="bar-chart-2"></i> Interactive Gantt Chart</h2>
+                    <p class="text-muted">{{ project.name if project else 'All Projects' }} - Critical Path Analysis</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="refreshGantt()">
+                        <i data-feather="refresh-cw"></i> Refresh
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportGantt()">
+                        <i data-feather="download"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <label for="projectSelect" class="form-label">Project Filter</label>
+            <select id="projectSelect" class="form-select" onchange="filterByProject()">
+                <option value="">All Projects</option>
+                {% for proj in projects %}
+                <option value="{{ proj.id }}" {% if project and proj.id == project.id %}selected{% endif %}>
+                    {{ proj.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="viewMode" class="form-label">View Mode</label>
+            <select id="viewMode" class="form-select" onchange="changeViewMode()">
+                <option value="Month">Monthly</option>
+                <option value="Week" selected>Weekly</option>
+                <option value="Day">Daily</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Display Options</label>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showCriticalPath" checked onchange="toggleCriticalPath()">
+                <label class="form-check-label" for="showCriticalPath">
+                    Show Critical Path
+                </label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Progress</label>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="showProgress" checked onchange="toggleProgress()">
+                <label class="form-check-label" for="showProgress">
+                    Show Progress
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gantt Chart Container -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div id="gantt-container" style="height: 600px; overflow: auto;">
+                        <canvas id="ganttChart" width="1200" height="600"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Details Modal -->
+    <div class="modal fade" id="activityModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Activity Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="activityDetails"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="editActivity()">Edit Activity</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6>Legend</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <span class="badge bg-danger me-2"></span>Critical Path
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-primary me-2"></span>Normal Activity
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-success me-2"></span>Completed
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-warning me-2"></span>In Progress
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/gantt.js') }}"></script>
+
+<script>
+// Initialize Gantt Chart
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGanttChart();
+    loadGanttData();
+});
+
+let ganttChart;
+let ganttData = [];
+let criticalPath = [];
+
+async function initializeGanttChart() {
+    const ctx = document.getElementById('ganttChart').getContext('2d');
+    
+    ganttChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            datasets: []
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].raw.activityName || 'Activity';
+                        },
+                        label: function(context) {
+                            const activity = context.raw;
+                            return [
+                                `Duration: ${activity.duration} days`,
+                                `Progress: ${activity.progress}%`,
+                                `Start: ${activity.start}`,
+                                `End: ${activity.end}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'week'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Timeline'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Activities'
+                    }
+                }
+            },
+            onClick: function(event, elements) {
+                if (elements.length > 0) {
+                    const activity = elements[0].element.$context.raw;
+                    showActivityDetails(activity);
+                }
+            }
+        }
+    });
+}
+
+async function loadGanttData() {
+    try {
+        const projectId = document.getElementById('projectSelect').value;
+        const url = projectId ? `/api/projects/${projectId}/gantt` : '/api/gantt/all';
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        ganttData = data.activities || [];
+        criticalPath = data.critical_path || [];
+        
+        updateGanttChart();
+        
+    } catch (error) {
+        console.error('Error loading Gantt data:', error);
+        showNotification('Error loading Gantt chart data', 'error');
+    }
+}
+
+function updateGanttChart() {
+    if (!ganttChart) return;
+    
+    const showCritical = document.getElementById('showCriticalPath').checked;
+    const showProgress = document.getElementById('showProgress').checked;
+    
+    const datasets = [];
+    
+    // Main activities dataset
+    const activities = ganttData.map(activity => ({
+        x: [new Date(activity.start_date), new Date(activity.end_date)],
+        y: activity.name,
+        activityName: activity.name,
+        duration: activity.duration,
+        progress: activity.progress,
+        start: activity.start_date,
+        end: activity.end_date,
+        isCritical: criticalPath.includes(activity.id)
+    }));
+    
+    datasets.push({
+        label: 'Activities',
+        data: activities,
+        backgroundColor: function(context) {
+            const activity = context.parsed;
+            if (showCritical && activity.isCritical) {
+                return 'rgba(220, 53, 69, 0.8)'; // Critical path - red
+            }
+            if (activity.progress === 100) {
+                return 'rgba(25, 135, 84, 0.8)'; // Completed - green
+            }
+            if (activity.progress > 0) {
+                return 'rgba(255, 193, 7, 0.8)'; // In progress - yellow
+            }
+            return 'rgba(13, 110, 253, 0.8)'; // Not started - blue
+        },
+        borderColor: function(context) {
+            const activity = context.parsed;
+            if (showCritical && activity.isCritical) {
+                return 'rgba(220, 53, 69, 1)';
+            }
+            return 'rgba(108, 117, 125, 1)';
+        },
+        borderWidth: function(context) {
+            const activity = context.parsed;
+            return showCritical && activity.isCritical ? 3 : 1;
+        }
+    });
+    
+    // Progress overlay if enabled
+    if (showProgress) {
+        const progressData = ganttData.map(activity => {
+            const start = new Date(activity.start_date);
+            const end = new Date(activity.end_date);
+            const duration = end - start;
+            const progressEnd = new Date(start.getTime() + (duration * activity.progress / 100));
+            
+            return {
+                x: [start, progressEnd],
+                y: activity.name,
+                activityName: activity.name + ' (Progress)',
+                progress: activity.progress
+            };
+        });
+        
+        datasets.push({
+            label: 'Progress',
+            data: progressData,
+            backgroundColor: 'rgba(25, 135, 84, 0.6)',
+            borderColor: 'rgba(25, 135, 84, 1)',
+            borderWidth: 2
+        });
+    }
+    
+    ganttChart.data.datasets = datasets;
+    ganttChart.update();
+}
+
+function showActivityDetails(activity) {
+    const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+    const detailsContainer = document.getElementById('activityDetails');
+    
+    detailsContainer.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Basic Information</h6>
+                <p><strong>Name:</strong> ${activity.activityName}</p>
+                <p><strong>Duration:</strong> ${activity.duration} days</p>
+                <p><strong>Progress:</strong> ${activity.progress}%</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Timeline</h6>
+                <p><strong>Start Date:</strong> ${activity.start}</p>
+                <p><strong>End Date:</strong> ${activity.end}</p>
+                <p><strong>Critical Path:</strong> ${activity.isCritical ? 'Yes' : 'No'}</p>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+}
+
+function filterByProject() {
+    loadGanttData();
+}
+
+function changeViewMode() {
+    const viewMode = document.getElementById('viewMode').value;
+    
+    if (ganttChart) {
+        ganttChart.options.scales.x.time.unit = viewMode.toLowerCase();
+        ganttChart.update();
+    }
+}
+
+function toggleCriticalPath() {
+    updateGanttChart();
+}
+
+function toggleProgress() {
+    updateGanttChart();
+}
+
+function refreshGantt() {
+    loadGanttData();
+    showNotification('Gantt chart refreshed', 'success');
+}
+
+function exportGantt() {
+    if (ganttChart) {
+        const url = ganttChart.toBase64Image();
+        const link = document.createElement('a');
+        link.download = 'gantt-chart.png';
+        link.href = url;
+        link.click();
+        
+        showNotification('Gantt chart exported', 'success');
+    }
+}
+
+function editActivity() {
+    // TODO: Implement activity editing
+    showNotification('Activity editing coming soon', 'info');
+}
+
+function showNotification(message, type) {
+    // Simple notification system
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

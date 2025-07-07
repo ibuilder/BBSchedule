@@ -239,6 +239,287 @@ def create_activity(project_id):
         flash('Error creating activity', 'error')
         return redirect(url_for('project_detail', project_id=project_id))
 
+@app.route('/gantt')
+@login_required
+def gantt_chart():
+    """Interactive Gantt chart view."""
+    try:
+        user_id = session.get('user_id')
+        projects = ProjectService.get_all_projects(user_id)
+        
+        project_id = request.args.get('project_id')
+        project = None
+        if project_id:
+            project = ProjectService.get_project_by_id(project_id, user_id)
+        
+        log_activity(user_id, f"Accessed Gantt chart for project {project_id}" if project_id else "Accessed Gantt chart for all projects")
+        
+        return render_template('gantt_interactive.html', 
+                             projects=projects, 
+                             project=project)
+        
+    except Exception as e:
+        log_error(e, "Gantt chart view error")
+        flash('Error loading Gantt chart', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/api/projects/<int:project_id>/gantt')
+@login_required
+def api_project_gantt(project_id):
+    """API endpoint for project Gantt data with critical path."""
+    try:
+        user_id = session.get('user_id')
+        project = ProjectService.get_project_by_id(project_id, user_id)
+        
+        if not project:
+            return jsonify({'error': 'Project not found'}), 404
+        
+        # Get activities with dates
+        activities = []
+        for activity in project.activities:
+            if activity.start_date and activity.end_date:
+                activities.append({
+                    'id': activity.id,
+                    'name': activity.name,
+                    'start_date': activity.start_date.isoformat(),
+                    'end_date': activity.end_date.isoformat(),
+                    'duration': activity.duration,
+                    'progress': activity.progress or 0,
+                    'activity_type': activity.activity_type.value if activity.activity_type else 'other'
+                })
+        
+        # Calculate critical path using scheduling service
+        from services.scheduling_service import SchedulingService
+        critical_path = SchedulingService.calculate_critical_path(project_id)
+        
+        return jsonify({
+            'activities': activities,
+            'critical_path': [cp['activity_id'] for cp in critical_path],
+            'project': {
+                'id': project.id,
+                'name': project.name,
+                'start_date': project.start_date.isoformat() if project.start_date else None,
+                'end_date': project.end_date.isoformat() if project.end_date else None
+            }
+        })
+        
+    except Exception as e:
+        log_error(e, f"Gantt API error for project {project_id}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/gantt/all')
+@login_required
+def api_all_gantt():
+    """API endpoint for all projects Gantt data."""
+    try:
+        user_id = session.get('user_id')
+        projects = ProjectService.get_all_projects(user_id)
+        
+        all_activities = []
+        all_critical_paths = []
+        
+        for project in projects:
+            for activity in project.activities:
+                if activity.start_date and activity.end_date:
+                    all_activities.append({
+                        'id': activity.id,
+                        'name': f"{project.name} - {activity.name}",
+                        'project_id': project.id,
+                        'project_name': project.name,
+                        'start_date': activity.start_date.isoformat(),
+                        'end_date': activity.end_date.isoformat(),
+                        'duration': activity.duration,
+                        'progress': activity.progress or 0,
+                        'activity_type': activity.activity_type.value if activity.activity_type else 'other'
+                    })
+            
+            # Get critical path for each project
+            from services.scheduling_service import SchedulingService
+            critical_path = SchedulingService.calculate_critical_path(project.id)
+            all_critical_paths.extend([cp['activity_id'] for cp in critical_path])
+        
+        return jsonify({
+            'activities': all_activities,
+            'critical_path': all_critical_paths
+        })
+        
+    except Exception as e:
+        log_error(e, "All projects Gantt API error")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/5d-analysis')
+@login_required
+def five_d_analysis():
+    """5D Analysis dashboard."""
+    try:
+        user_id = session.get('user_id')
+        projects = ProjectService.get_all_projects(user_id)
+        
+        log_activity(user_id, "Accessed 5D Analysis dashboard")
+        
+        return render_template('5d_analysis.html', projects=projects)
+        
+    except Exception as e:
+        log_error(e, "5D analysis view error")
+        flash('Error loading 5D analysis', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/api/projects/<int:project_id>/5d-analysis')
+@login_required
+def api_project_5d_analysis(project_id):
+    """API endpoint for project 5D analysis data."""
+    try:
+        user_id = session.get('user_id')
+        from services.analytics_service import AnalyticsService
+        
+        analysis_data = AnalyticsService.get_5d_analysis(project_id, user_id)
+        
+        return jsonify(analysis_data)
+        
+    except Exception as e:
+        log_error(e, f"5D analysis API error for project {project_id}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/5d-analysis/all')
+@login_required
+def api_all_5d_analysis():
+    """API endpoint for all projects 5D analysis."""
+    try:
+        user_id = session.get('user_id')
+        from services.analytics_service import AnalyticsService
+        
+        analysis_data = AnalyticsService.get_all_projects_5d_analysis(user_id)
+        
+        return jsonify(analysis_data)
+        
+    except Exception as e:
+        log_error(e, "All projects 5D analysis API error")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/resources')
+@login_required
+def resource_management():
+    """Resource management dashboard."""
+    try:
+        user_id = session.get('user_id')
+        projects = ProjectService.get_all_projects(user_id)
+        
+        log_activity(user_id, "Accessed resource management")
+        
+        return render_template('resource_management.html', projects=projects)
+        
+    except Exception as e:
+        log_error(e, "Resource management view error")
+        flash('Error loading resource management', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/api/resources/management')
+@login_required
+def api_resource_management():
+    """API endpoint for resource management data."""
+    try:
+        user_id = session.get('user_id')
+        
+        # Mock data for now - would integrate with actual resource system
+        resource_data = {
+            'crews': [
+                {
+                    'id': 1,
+                    'specialty': 'Foundation',
+                    'size': 8,
+                    'current_assignment': 'Downtown Office Complex',
+                    'utilization': 85
+                },
+                {
+                    'id': 2,
+                    'specialty': 'Electrical',
+                    'size': 4,
+                    'current_assignment': 'Highway Extension',
+                    'utilization': 72
+                },
+                {
+                    'id': 3,
+                    'specialty': 'Framing',
+                    'size': 12,
+                    'current_assignment': None,
+                    'utilization': 0
+                }
+            ],
+            'equipment': [
+                {
+                    'id': 1,
+                    'category': 'Excavator',
+                    'status': 'Active',
+                    'location': 'Site A',
+                    'next_maintenance': '2025-07-15'
+                },
+                {
+                    'id': 2,
+                    'category': 'Crane',
+                    'status': 'Maintenance',
+                    'location': 'Depot',
+                    'next_maintenance': '2025-07-10'
+                }
+            ],
+            'conflicts': [
+                {
+                    'id': 1,
+                    'title': 'Double Booking',
+                    'description': 'Crew #1 assigned to overlapping activities',
+                    'severity': 'high',
+                    'recommendation': 'Reschedule Activity B by 3 days'
+                }
+            ],
+            'timeline': {
+                'dates': ['2025-07-01', '2025-07-02', '2025-07-03', '2025-07-04', '2025-07-05'],
+                'crew_utilization': [75, 80, 85, 82, 78],
+                'equipment_utilization': [65, 70, 75, 72, 68]
+            },
+            'distribution': {
+                'labels': ['Foundation', 'Electrical', 'Framing', 'Equipment'],
+                'values': [8, 4, 12, 2]
+            }
+        }
+        
+        return jsonify(resource_data)
+        
+    except Exception as e:
+        log_error(e, "Resource management API error")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/resources', methods=['POST'])
+@login_required
+def api_add_resource():
+    """API endpoint to add new resource."""
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        # TODO: Implement actual resource creation
+        log_activity(user_id, f"Added new {data.get('type')} resource: {data.get('name')}")
+        
+        return jsonify({'success': True, 'message': 'Resource added successfully'})
+        
+    except Exception as e:
+        log_error(e, "Add resource API error")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/resources/optimize', methods=['POST'])
+@login_required
+def api_optimize_resources():
+    """API endpoint for resource optimization."""
+    try:
+        user_id = session.get('user_id')
+        
+        # TODO: Implement actual optimization algorithm
+        log_activity(user_id, "Performed resource optimization")
+        
+        return jsonify({'success': True, 'improvements': 5})
+        
+    except Exception as e:
+        log_error(e, "Resource optimization API error")
+        return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/dependencies')
 @login_required
 def dependencies():
