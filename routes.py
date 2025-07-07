@@ -291,6 +291,30 @@ def delete_activity(activity_id):
         flash('Error deleting activity', 'error')
         return redirect(url_for('index'))
 
+@app.route('/project/<int:project_id>/upload_document', methods=['GET', 'POST'])
+@login_required
+def upload_document(project_id):
+    """Upload document for a project."""
+    try:
+        user_id = session.get('user_id')
+        project = ProjectService.get_project_by_id(project_id, user_id)
+        
+        if not project:
+            flash('Project not found', 'error')
+            return redirect(url_for('projects'))
+        
+        if request.method == 'POST':
+            # Handle file upload here - for now just redirect back with success message
+            flash('Document upload functionality coming soon', 'info')
+            return redirect(url_for('project_detail', project_id=project_id))
+        
+        return render_template('project_detail.html', project=project)
+        
+    except Exception as e:
+        log_error(e, f"Document upload error for project {project_id}")
+        flash('Error uploading document', 'error')
+        return redirect(url_for('project_detail', project_id=project_id))
+
 @app.route('/gantt')
 @login_required
 def gantt_chart():
