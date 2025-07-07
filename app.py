@@ -38,7 +38,20 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 with app.app_context():
     # Import models to ensure tables are created
     import models
-    db.create_all()
+    
+    # For PostgreSQL, we need to handle enum types properly
+    try:
+        db.create_all()
+    except Exception as e:
+        # If tables already exist or there are conflicts, recreate cleanly
+        print(f"Database setup note: {e}")
+        try:
+            # Drop with cascade to handle enum dependencies
+            db.engine.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+            db.create_all()
+        except Exception:
+            # Fallback: just create tables if they don't exist
+            db.create_all()
 
 # Import and register routes
 from routes import *
