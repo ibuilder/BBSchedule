@@ -72,6 +72,12 @@ class Project(db.Model):
         """Get list of overdue activities"""
         today = date.today()
         return [a for a in self.activities if a.end_date and a.end_date < today and a.progress < 100]
+    
+    def get_total_duration(self):
+        """Calculate total project duration in days"""
+        if not self.activities:
+            return 0
+        return sum(activity.duration for activity in self.activities)
 
 class Activity(db.Model):
     __tablename__ = 'activities'
