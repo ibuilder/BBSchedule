@@ -1,0 +1,819 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar View - Construction Scheduler{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">Project Calendar</h1>
+                    <p class="text-muted mb-0">View and manage activities across all projects</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="showCreateActivityModal()">
+                        <i data-feather="plus"></i> New Activity
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="exportCalendar()">
+                        <i data-feather="download"></i> Export
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i data-feather="filter"></i> Filter
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="filterByProject('all')">All Projects</a></li>
+                            {% for project in projects %}
+                            <li><a class="dropdown-item" href="#" onclick="filterByProject({{ project.id }})">{{ project.name }}</a></li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterByType('critical')">Critical Path Only</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterByType('overdue')">Overdue Activities</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Controls -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateCalendar('prev')">
+                                    <i data-feather="chevron-left"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateCalendar('today')">
+                                    Today
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="navigateCalendar('next')">
+                                    <i data-feather="chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-0" id="currentMonth">{{ current_month }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="text-muted">View:</span>
+                        </div>
+                        <div class="col-auto">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <input type="radio" class="btn-check" name="calendarView" id="monthView" autocomplete="off" checked>
+                                <label class="btn btn-outline-primary" for="monthView" onclick="changeView('month')">Month</label>
+
+                                <input type="radio" class="btn-check" name="calendarView" id="weekView" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="weekView" onclick="changeView('week')">Week</label>
+
+                                <input type="radio" class="btn-check" name="calendarView" id="dayView" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="dayView" onclick="changeView('day')">Day</label>
+
+                                <input type="radio" class="btn-check" name="calendarView" id="agendaView" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="agendaView" onclick="changeView('agenda')">Agenda</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Summary Sidebar -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Today's Activities</h5>
+                </div>
+                <div class="card-body">
+                    <div id="todayActivities">
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading today's activities...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Calendar Legend</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="legend-color bg-primary me-2"></div>
+                        <span class="small">Regular Activities</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="legend-color bg-danger me-2"></div>
+                        <span class="small">Critical Path</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="legend-color bg-success me-2"></div>
+                        <span class="small">Completed</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="legend-color bg-warning me-2"></div>
+                        <span class="small">In Progress</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="legend-color bg-secondary me-2"></div>
+                        <span class="small">Not Started</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="legend-color bg-info me-2"></div>
+                        <span class="small">Milestone</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <div class="h4 text-primary mb-0" id="activitiesThisWeek">0</div>
+                                <small class="text-muted">This Week</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-success mb-0" id="completedThisWeek">0</div>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <div class="h4 text-warning mb-0" id="overdueActivities">0</div>
+                                <small class="text-muted">Overdue</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-info mb-0" id="upcomingDeadlines">0</div>
+                            <small class="text-muted">Due Soon</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Detail Modal -->
+<div class="modal fade" id="activityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Activity Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="activityDetails">
+                    <!-- Activity details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editCurrentActivity()">Edit Activity</button>
+                <button type="button" class="btn btn-success" onclick="markActivityComplete()">Mark Complete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Activity Modal -->
+<div class="modal fade" id="createActivityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Activity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createActivityForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Project</label>
+                        <select class="form-select" name="project_id" required>
+                            <option value="">Select Project</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Activity Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" name="start_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Duration (days)</label>
+                                <input type="number" class="form-control" name="duration" min="1" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Activity Type</label>
+                        <select class="form-select" name="activity_type">
+                            <option value="task">Task</option>
+                            <option value="milestone">Milestone</option>
+                            <option value="procurement">Procurement</option>
+                            <option value="inspection">Inspection</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+}
+
+#calendar {
+    min-height: 600px;
+}
+
+.fc-event {
+    cursor: pointer;
+    border: none !important;
+    padding: 2px 4px;
+    font-size: 12px;
+}
+
+.fc-event-critical {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+.fc-event-completed {
+    background-color: #198754 !important;
+    border-color: #198754 !important;
+}
+
+.fc-event-in-progress {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.fc-event-not-started {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.fc-event-milestone {
+    background-color: #0dcaf0 !important;
+    border-color: #0dcaf0 !important;
+}
+
+.activity-item {
+    border-left: 4px solid #0d6efd;
+    padding: 12px;
+    margin-bottom: 8px;
+    background-color: #f8f9fa;
+    border-radius: 0 4px 4px 0;
+}
+
+.activity-item.critical {
+    border-left-color: #dc3545;
+}
+
+.activity-item.completed {
+    border-left-color: #198754;
+    opacity: 0.7;
+}
+
+.activity-item.overdue {
+    border-left-color: #fd7e14;
+    background-color: #fff3cd;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+let calendar;
+let currentSelectedActivity = null;
+let allActivities = [];
+let currentFilter = 'all';
+
+// Initialize calendar when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCalendar();
+    loadCalendarData();
+    loadTodayActivities();
+    loadQuickStats();
+});
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: false, // We'll use our custom header
+        height: 'auto',
+        editable: true,
+        selectable: true,
+        selectMirror: true,
+        dayMaxEvents: true,
+        weekends: true,
+        
+        // Event handling
+        select: function(info) {
+            showCreateActivityModal(info.start);
+        },
+        
+        eventClick: function(info) {
+            showActivityDetails(info.event);
+        },
+        
+        eventDrop: function(info) {
+            updateActivityDate(info.event, info.event.start);
+        },
+        
+        eventResize: function(info) {
+            updateActivityDuration(info.event, info.event.start, info.event.end);
+        },
+        
+        datesSet: function(info) {
+            updateCurrentMonth(info.view.title);
+        }
+    });
+    
+    calendar.render();
+}
+
+function loadCalendarData() {
+    fetch('/api/calendar/activities')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading calendar data:', data.error);
+                return;
+            }
+            
+            allActivities = data.activities || [];
+            updateCalendarEvents();
+        })
+        .catch(error => {
+            console.error('Error loading calendar data:', error);
+        });
+}
+
+function updateCalendarEvents() {
+    // Clear existing events
+    calendar.removeAllEvents();
+    
+    // Filter activities based on current filter
+    let filteredActivities = allActivities;
+    
+    if (currentFilter !== 'all') {
+        if (typeof currentFilter === 'number') {
+            // Filter by project ID
+            filteredActivities = allActivities.filter(activity => activity.project_id === currentFilter);
+        } else if (currentFilter === 'critical') {
+            filteredActivities = allActivities.filter(activity => activity.is_critical);
+        } else if (currentFilter === 'overdue') {
+            const today = new Date();
+            filteredActivities = allActivities.filter(activity => 
+                new Date(activity.end) < today && activity.progress < 100
+            );
+        }
+    }
+    
+    // Add filtered activities to calendar
+    filteredActivities.forEach(activity => {
+        const event = {
+            id: activity.id,
+            title: activity.name,
+            start: activity.start,
+            end: activity.end,
+            extendedProps: {
+                project_name: activity.project_name,
+                progress: activity.progress,
+                activity_type: activity.activity_type,
+                is_critical: activity.is_critical,
+                location_start: activity.location_start,
+                location_end: activity.location_end,
+                description: activity.description
+            },
+            className: getEventClassName(activity)
+        };
+        
+        calendar.addEvent(event);
+    });
+}
+
+function getEventClassName(activity) {
+    let className = 'fc-event';
+    
+    if (activity.is_critical) {
+        className += ' fc-event-critical';
+    } else if (activity.progress === 100) {
+        className += ' fc-event-completed';
+    } else if (activity.progress > 0) {
+        className += ' fc-event-in-progress';
+    } else if (activity.activity_type === 'milestone') {
+        className += ' fc-event-milestone';
+    } else {
+        className += ' fc-event-not-started';
+    }
+    
+    // Check if overdue
+    const today = new Date();
+    if (new Date(activity.end) < today && activity.progress < 100) {
+        className += ' fc-event-overdue';
+    }
+    
+    return className;
+}
+
+function showActivityDetails(event) {
+    currentSelectedActivity = event;
+    
+    const props = event.extendedProps;
+    const modalBody = document.getElementById('activityDetails');
+    
+    modalBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Basic Information</h6>
+                <p><strong>Activity:</strong> ${event.title}</p>
+                <p><strong>Project:</strong> ${props.project_name}</p>
+                <p><strong>Type:</strong> ${props.activity_type || 'Task'}</p>
+                <p><strong>Progress:</strong> ${props.progress || 0}%</p>
+                ${props.description ? `<p><strong>Description:</strong> ${props.description}</p>` : ''}
+            </div>
+            <div class="col-md-6">
+                <h6>Schedule Information</h6>
+                <p><strong>Start Date:</strong> ${event.start.toLocaleDateString()}</p>
+                <p><strong>End Date:</strong> ${event.end ? event.end.toLocaleDateString() : 'Not set'}</p>
+                <p><strong>Critical Path:</strong> ${props.is_critical ? 'Yes' : 'No'}</p>
+                ${props.location_start ? `<p><strong>Location:</strong> ${props.location_start} - ${props.location_end}</p>` : ''}
+            </div>
+        </div>
+        
+        ${props.progress > 0 && props.progress < 100 ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>Progress</h6>
+                <div class="progress">
+                    <div class="progress-bar" style="width: ${props.progress}%">${props.progress}%</div>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+    modal.show();
+}
+
+function loadTodayActivities() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    fetch(`/api/calendar/activities?date=${today}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading today\'s activities:', data.error);
+                return;
+            }
+            
+            updateTodayActivities(data.activities || []);
+        })
+        .catch(error => {
+            console.error('Error loading today\'s activities:', error);
+        });
+}
+
+function updateTodayActivities(activities) {
+    const container = document.getElementById('todayActivities');
+    
+    if (activities.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No activities scheduled for today.</p>';
+        return;
+    }
+    
+    let html = '';
+    activities.forEach(activity => {
+        const statusClass = getActivityStatusClass(activity);
+        html += `
+            <div class="activity-item ${statusClass}" onclick="showActivityFromList(${activity.id})">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${activity.name}</h6>
+                        <p class="mb-1 text-muted small">${activity.project_name}</p>
+                        ${activity.location_start ? `<p class="mb-0 text-muted small">Location: ${activity.location_start} - ${activity.location_end}</p>` : ''}
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-secondary">${activity.progress || 0}%</span>
+                        ${activity.is_critical ? '<span class="badge bg-danger ms-1">Critical</span>' : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function getActivityStatusClass(activity) {
+    if (activity.progress === 100) return 'completed';
+    if (activity.is_critical) return 'critical';
+    
+    const today = new Date();
+    if (new Date(activity.end) < today && activity.progress < 100) {
+        return 'overdue';
+    }
+    
+    return '';
+}
+
+function loadQuickStats() {
+    fetch('/api/calendar/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading stats:', data.error);
+                return;
+            }
+            
+            document.getElementById('activitiesThisWeek').textContent = data.activities_this_week || 0;
+            document.getElementById('completedThisWeek').textContent = data.completed_this_week || 0;
+            document.getElementById('overdueActivities').textContent = data.overdue_activities || 0;
+            document.getElementById('upcomingDeadlines').textContent = data.upcoming_deadlines || 0;
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+        });
+}
+
+// Navigation functions
+function navigateCalendar(direction) {
+    if (direction === 'prev') {
+        calendar.prev();
+    } else if (direction === 'next') {
+        calendar.next();
+    } else if (direction === 'today') {
+        calendar.today();
+    }
+}
+
+function changeView(viewType) {
+    switch(viewType) {
+        case 'month':
+            calendar.changeView('dayGridMonth');
+            break;
+        case 'week':
+            calendar.changeView('timeGridWeek');
+            break;
+        case 'day':
+            calendar.changeView('timeGridDay');
+            break;
+        case 'agenda':
+            calendar.changeView('listWeek');
+            break;
+    }
+}
+
+function updateCurrentMonth(title) {
+    document.getElementById('currentMonth').textContent = title;
+}
+
+// Filter functions
+function filterByProject(projectId) {
+    currentFilter = projectId;
+    updateCalendarEvents();
+}
+
+function filterByType(type) {
+    currentFilter = type;
+    updateCalendarEvents();
+}
+
+// Modal functions
+function showCreateActivityModal(date = null) {
+    const modal = new bootstrap.Modal(document.getElementById('createActivityModal'));
+    
+    if (date) {
+        const dateStr = date.toISOString().split('T')[0];
+        document.querySelector('input[name="start_date"]').value = dateStr;
+    }
+    
+    modal.show();
+}
+
+function showActivityFromList(activityId) {
+    const activity = allActivities.find(a => a.id === activityId);
+    if (activity) {
+        // Convert to event-like object for showActivityDetails
+        const event = {
+            title: activity.name,
+            start: new Date(activity.start),
+            end: new Date(activity.end),
+            extendedProps: activity
+        };
+        showActivityDetails(event);
+    }
+}
+
+// Activity management functions
+function editCurrentActivity() {
+    if (currentSelectedActivity) {
+        const activityId = currentSelectedActivity.id;
+        const projectId = currentSelectedActivity.extendedProps.project_id;
+        window.location.href = `/projects/${projectId}/activities/${activityId}/edit`;
+    }
+}
+
+function markActivityComplete() {
+    if (currentSelectedActivity) {
+        const activityId = currentSelectedActivity.id;
+        
+        fetch(`/api/activities/${activityId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the activity in our data
+                const activity = allActivities.find(a => a.id == activityId);
+                if (activity) {
+                    activity.progress = 100;
+                }
+                
+                // Refresh calendar
+                updateCalendarEvents();
+                loadTodayActivities();
+                loadQuickStats();
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('activityModal')).hide();
+                
+                // Show success message
+                alert('Activity marked as complete!');
+            } else {
+                alert('Error updating activity: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating activity:', error);
+            alert('Error updating activity');
+        });
+    }
+}
+
+function updateActivityDate(event, newStart) {
+    const activityId = event.id;
+    
+    fetch(`/api/activities/${activityId}/update-date`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            start_date: newStart.toISOString().split('T')[0]
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Error updating activity date: ' + data.error);
+            // Revert the change
+            event.revert();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating activity date:', error);
+        event.revert();
+    });
+}
+
+function updateActivityDuration(event, newStart, newEnd) {
+    const activityId = event.id;
+    const duration = Math.ceil((newEnd - newStart) / (1000 * 60 * 60 * 24));
+    
+    fetch(`/api/activities/${activityId}/update-duration`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            duration: duration
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('Error updating activity duration: ' + data.error);
+            event.revert();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating activity duration:', error);
+        event.revert();
+    });
+}
+
+// Form submission
+document.getElementById('createActivityForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch('/api/activities/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('createActivityModal')).hide();
+            
+            // Reset form
+            e.target.reset();
+            
+            // Reload calendar data
+            loadCalendarData();
+            loadTodayActivities();
+            loadQuickStats();
+            
+            alert('Activity created successfully!');
+        } else {
+            alert('Error creating activity: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error creating activity:', error);
+        alert('Error creating activity');
+    });
+});
+
+function exportCalendar() {
+    window.open('/api/calendar/export', '_blank');
+}
+
+// Initialize feather icons
+feather.replace();
+</script>
+{% endblock %}

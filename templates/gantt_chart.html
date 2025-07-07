@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}Gantt Chart - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">{{ project.name }}</h1>
+                    <p class="text-muted mb-0">Interactive Gantt Chart & Critical Path Analysis</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left"></i> Back to Project
+                    </a>
+                    <button type="button" class="btn btn-outline-primary" onclick="exportGanttChart()">
+                        <i data-feather="download"></i> Export
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="toggleCriticalPath()">
+                        <i data-feather="trending-up"></i> Critical Path
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">View Options</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Timeline View</label>
+                            <select class="form-select" id="timelineView" onchange="updateTimelineView()">
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Show</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showCriticalPath" checked>
+                                <label class="form-check-label" for="showCriticalPath">
+                                    Critical Path
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showProgress" checked>
+                                <label class="form-check-label" for="showProgress">
+                                    Progress Bars
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Project Summary</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-primary mb-0" id="totalActivities">{{ activities|length }}</div>
+                                <small class="text-muted">Total Activities</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-success mb-0" id="criticalActivities">0</div>
+                                <small class="text-muted">Critical Activities</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gantt Chart -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Gantt Chart</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary" onclick="zoomIn()">
+                                <i data-feather="zoom-in"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="zoomOut()">
+                                <i data-feather="zoom-out"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetZoom()">
+                                <i data-feather="maximize"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="gantt-container">
+                        <canvas id="ganttChart" width="100%" height="600"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical Path Analysis -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Critical Path Analysis</h5>
+                    <div id="criticalPathAnalysis">
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Calculating critical path...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Resource Conflicts</h5>
+                    <div id="resourceConflicts">
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Analyzing conflicts...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline View -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Timeline View</h5>
+                    <div id="timelineChart">
+                        <canvas id="timelineCanvas" width="100%" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Detail Modal -->
+<div class="modal fade" id="activityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Activity Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="activityDetails">
+                    <!-- Activity details will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editActivity()">Edit Activity</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let ganttChart;
+let timelineChart;
+let projectData = {};
+let criticalPathData = {};
+let currentView = 'monthly';
+let selectedActivity = null;
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGanttChart();
+    loadProjectData();
+    loadCriticalPathData();
+    loadResourceConflicts();
+});
+
+// Initialize Gantt Chart
+function initializeGanttChart() {
+    const canvas = document.getElementById('ganttChart');
+    const ctx = canvas.getContext('2d');
+    
+    ganttChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'MMM DD'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Timeline'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Activities'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            const activity = projectData.gantt_data[context.dataIndex];
+                            return [
+                                `Duration: ${activity.duration} days`,
+                                `Progress: ${activity.progress}%`,
+                                `Type: ${activity.type}`,
+                                activity.is_critical ? 'Critical Path Activity' : ''
+                            ].filter(Boolean);
+                        }
+                    }
+                }
+            },
+            onClick: function(event, elements) {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const activity = projectData.gantt_data[index];
+                    showActivityDetails(activity);
+                }
+            }
+        }
+    });
+}
+
+// Load project data
+function loadProjectData() {
+    fetch(`/api/projects/{{ project.id }}/gantt-chart`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading project data:', data.error);
+                return;
+            }
+            projectData = data;
+            updateGanttChart();
+            updateProjectSummary();
+        })
+        .catch(error => {
+            console.error('Error loading project data:', error);
+        });
+}
+
+// Load critical path data
+function loadCriticalPathData() {
+    fetch(`/api/projects/{{ project.id }}/critical-path`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading critical path:', data.error);
+                return;
+            }
+            criticalPathData = data;
+            updateCriticalPathAnalysis();
+        })
+        .catch(error => {
+            console.error('Error loading critical path:', error);
+        });
+}
+
+// Load resource conflicts
+function loadResourceConflicts() {
+    fetch(`/api/projects/{{ project.id }}/resource-conflicts`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading resource conflicts:', data.error);
+                return;
+            }
+            updateResourceConflicts(data);
+        })
+        .catch(error => {
+            console.error('Error loading resource conflicts:', error);
+        });
+}
+
+// Update Gantt Chart
+function updateGanttChart() {
+    if (!projectData.gantt_data) return;
+    
+    const labels = projectData.gantt_data.map(activity => activity.name);
+    const datasets = [{
+        label: 'Activities',
+        data: projectData.gantt_data.map(activity => ({
+            x: [activity.start, activity.end],
+            y: activity.name
+        })),
+        backgroundColor: projectData.gantt_data.map(activity => 
+            activity.is_critical ? '#dc3545' : '#0d6efd'
+        ),
+        borderColor: projectData.gantt_data.map(activity => 
+            activity.is_critical ? '#dc3545' : '#0d6efd'
+        ),
+        borderWidth: 1
+    }];
+    
+    ganttChart.data.labels = labels;
+    ganttChart.data.datasets = datasets;
+    ganttChart.update();
+}
+
+// Update project summary
+function updateProjectSummary() {
+    if (!projectData.gantt_data) return;
+    
+    const totalActivities = projectData.gantt_data.length;
+    const criticalActivities = projectData.gantt_data.filter(a => a.is_critical).length;
+    
+    document.getElementById('totalActivities').textContent = totalActivities;
+    document.getElementById('criticalActivities').textContent = criticalActivities;
+}
+
+// Update critical path analysis
+function updateCriticalPathAnalysis() {
+    const container = document.getElementById('criticalPathAnalysis');
+    
+    if (!criticalPathData.critical_activities) {
+        container.innerHTML = '<p class="text-muted">No critical path data available.</p>';
+        return;
+    }
+    
+    let html = `
+        <div class="mb-3">
+            <h6>Project Duration: ${criticalPathData.project_duration} days</h6>
+            <div class="progress mb-2">
+                <div class="progress-bar bg-success" style="width: ${criticalPathData.schedule_performance?.schedule_performance_index * 100 || 0}%"></div>
+            </div>
+            <small class="text-muted">Schedule Performance Index: ${criticalPathData.schedule_performance?.schedule_performance_index || 0}</small>
+        </div>
+        
+        <h6>Critical Activities:</h6>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Activity</th>
+                        <th>Duration</th>
+                        <th>Early Start</th>
+                        <th>Early Finish</th>
+                        <th>Float</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    criticalPathData.critical_activities.forEach(activity => {
+        html += `
+            <tr>
+                <td>${activity.name}</td>
+                <td>${activity.duration} days</td>
+                <td>${activity.early_start}</td>
+                <td>${activity.early_finish}</td>
+                <td>0 days</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// Update resource conflicts
+function updateResourceConflicts(data) {
+    const container = document.getElementById('resourceConflicts');
+    
+    if (!data.conflicts || data.conflicts.length === 0) {
+        container.innerHTML = '<p class="text-success">No resource conflicts detected.</p>';
+        return;
+    }
+    
+    let html = '<div class="list-group list-group-flush">';
+    
+    data.conflicts.forEach(conflict => {
+        html += `
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Resource Conflict</h6>
+                    <small class="text-danger">High Priority</small>
+                </div>
+                <p class="mb-1">${conflict.activity1_name} conflicts with ${conflict.activity2_name}</p>
+                <small class="text-muted">Time overlap: ${conflict.time_overlap_days} days</small>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    if (data.recommendations && data.recommendations.length > 0) {
+        html += '<div class="mt-3"><h6>Recommendations:</h6>';
+        data.recommendations.forEach(rec => {
+            html += `<div class="alert alert-info py-2">${rec.description}</div>`;
+        });
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+// Chart interaction functions
+function toggleCriticalPath() {
+    const checkbox = document.getElementById('showCriticalPath');
+    checkbox.checked = !checkbox.checked;
+    updateGanttChart();
+}
+
+function updateTimelineView() {
+    currentView = document.getElementById('timelineView').value;
+    loadTimelineData();
+}
+
+function loadTimelineData() {
+    fetch(`/api/projects/{{ project.id }}/timeline?view=${currentView}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading timeline data:', data.error);
+                return;
+            }
+            updateTimelineChart(data);
+        })
+        .catch(error => {
+            console.error('Error loading timeline data:', error);
+        });
+}
+
+function updateTimelineChart(data) {
+    // Implementation for timeline chart update
+    console.log('Timeline data:', data);
+}
+
+function showActivityDetails(activity) {
+    selectedActivity = activity;
+    
+    const modalBody = document.getElementById('activityDetails');
+    modalBody.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Basic Information</h6>
+                <p><strong>Name:</strong> ${activity.name}</p>
+                <p><strong>Duration:</strong> ${activity.duration} days</p>
+                <p><strong>Progress:</strong> ${activity.progress}%</p>
+                <p><strong>Type:</strong> ${activity.type}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Schedule Information</h6>
+                <p><strong>Start Date:</strong> ${new Date(activity.start).toLocaleDateString()}</p>
+                <p><strong>End Date:</strong> ${new Date(activity.end).toLocaleDateString()}</p>
+                <p><strong>Critical Path:</strong> ${activity.is_critical ? 'Yes' : 'No'}</p>
+                ${activity.location_start ? `<p><strong>Location:</strong> ${activity.location_start} - ${activity.location_end}</p>` : ''}
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+    modal.show();
+}
+
+function editActivity() {
+    if (selectedActivity) {
+        window.location.href = `/projects/{{ project.id }}/activities/${selectedActivity.id}/edit`;
+    }
+}
+
+function exportGanttChart() {
+    // Implementation for chart export
+    alert('Export functionality will be implemented');
+}
+
+function zoomIn() {
+    // Implementation for zoom in
+    console.log('Zoom in');
+}
+
+function zoomOut() {
+    // Implementation for zoom out
+    console.log('Zoom out');
+}
+
+function resetZoom() {
+    // Implementation for reset zoom
+    console.log('Reset zoom');
+}
+
+// Initialize feather icons
+feather.replace();
+</script>
+{% endblock %}

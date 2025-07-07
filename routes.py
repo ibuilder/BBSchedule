@@ -246,6 +246,25 @@ def import_schedule():
         log_error(e, "Import schedule error")
         return redirect(url_for('projects'))
 
+@app.route('/calendar')
+@login_required
+def calendar_view():
+    """Display calendar view of all activities."""
+    try:
+        user_id = session.get('user_id', 'anonymous_user')
+        projects = ProjectService.get_all_projects(user_id)
+        
+        from datetime import datetime
+        current_month = datetime.now().strftime('%B %Y')
+        
+        return render_template('calendar_view.html', 
+                             projects=projects,
+                             current_month=current_month)
+    except Exception as e:
+        log_error(e, "Calendar view error")
+        flash('Error loading calendar', 'error')
+        return redirect(url_for('index'))
+
 # API Routes with proper error handling
 @app.route('/api/dashboard/metrics')
 @login_required
@@ -294,3 +313,160 @@ def handle_exception(error):
     db.session.rollback()
     flash('An unexpected error occurred', 'error')
     return render_template('500.html'), 500
+
+# Calendar API endpoints
+@app.route('/api/calendar/activities')
+@login_required
+def api_calendar_activities():
+    """API endpoint for calendar activities."""
+    try:
+        user_id = session.get('user_id', 'anonymous_user')
+        date_filter = request.args.get('date')
+        project_filter = request.args.get('project_id')
+        
+        query = db.session.query(Activity, Project).join(Project)
+        
+        if project_filter:
+            query = query.filter(Activity.project_id == project_filter)
+            
+        if date_filter:
+            from datetime import datetime
+            target_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+            query = query.filter(
+                Activity.start_date <= target_date,
+                Activity.end_date >= target_date
+            )
+        
+        results = query.all()
+        
+        activities = []
+        for activity, project in results:
+            activities.append({
+                'id': activity.id,
+                'name': activity.name,
+                'project_id': project.id,
+                'project_name': project.name,
+                'start': activity.start_date.isoformat() if activity.start_date else None,
+                'end': activity.end_date.isoformat() if activity.end_date else None,
+                'progress': activity.progress or 0,
+                'activity_type': activity.activity_type.value if activity.activity_type else 'task',
+                'is_critical': False,  # TODO: Calculate from critical path
+                'location_start': activity.location_start,
+                'location_end': activity.location_end,
+                'description': activity.description
+            })
+        
+        return jsonify({'activities': activities})
+        
+    except Exception as e:
+        log_error(e, "Calendar activities API error")
+        return jsonify({'error': 'Failed to load calendar activities'}), 500
+
+@app.route('/api/calendar/stats')
+@login_required
+def api_calendar_stats():
+    """API endpoint for calendar statistics."""
+    try:
+        from datetime import datetime, timedelta
+        
+        today = datetime.now().date()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        
+        # Activities this week
+        activities_this_week = Activity.query.filter(
+            Activity.start_date >= week_start,
+            Activity.start_date <= week_end
+        ).count()
+        
+        # Completed this week
+        completed_this_week = Activity.query.filter(
+            Activity.start_date >= week_start,
+            Activity.start_date <= week_end,
+            Activity.progress == 100
+        ).count()
+        
+        # Overdue activities
+        overdue_activities = Activity.query.filter(
+            Activity.end_date < today,
+            Activity.progress < 100
+        ).count()
+        
+        # Upcoming deadlines (next 7 days)
+        upcoming_end = today + timedelta(days=7)
+        upcoming_deadlines = Activity.query.filter(
+            Activity.end_date >= today,
+            Activity.end_date <= upcoming_end,
+            Activity.progress < 100
+        ).count()
+        
+        return jsonify({
+            'activities_this_week': activities_this_week,
+            'completed_this_week': completed_this_week,
+            'overdue_activities': overdue_activities,
+            'upcoming_deadlines': upcoming_deadlines
+        })
+        
+    except Exception as e:
+        log_error(e, "Calendar stats API error")
+        return jsonify({'error': 'Failed to load calendar stats'}), 500
+
+@app.route('/api/activities/<int:activity_id>/complete', methods=['POST'])
+@login_required
+def api_complete_activity(activity_id):
+    """API endpoint to mark activity as complete."""
+    try:
+        activity = Activity.query.get_or_404(activity_id)
+        activity.progress = 100
+        from datetime import datetime
+        activity.updated_at = datetime.now()
+        
+        db.session.commit()
+        
+        log_activity(session.get('user_id', 'anonymous_user'), 
+                    'completed_activity', 
+                    f"Activity: {activity.name}")
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        log_error(e, f"Complete activity error for activity {activity_id}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to complete activity'}), 500
+
+@app.route('/api/activities/create', methods=['POST'])
+@login_required
+def api_create_activity():
+    """API endpoint to create new activity."""
+    try:
+        data = request.get_json()
+        
+        from datetime import datetime, timedelta
+        
+        activity = Activity(
+            name=data['name'],
+            description=data.get('description'),
+            project_id=data['project_id'],
+            activity_type=ActivityType(data.get('activity_type', 'task')),
+            duration=int(data.get('duration', 1)),
+            start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date(),
+            progress=0
+        )
+        
+        # Calculate end date
+        if activity.start_date and activity.duration:
+            activity.end_date = activity.start_date + timedelta(days=activity.duration)
+        
+        db.session.add(activity)
+        db.session.commit()
+        
+        log_activity(session.get('user_id', 'anonymous_user'),
+                    'created_activity',
+                    f"Activity: {activity.name}")
+        
+        return jsonify({'success': True, 'activity_id': activity.id})
+        
+    except Exception as e:
+        log_error(e, "Create activity API error")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create activity'}), 500
