@@ -7,12 +7,15 @@ This is a comprehensive Flask-based web application for managing construction pr
 ## System Architecture
 
 ### Backend Architecture
-- **Framework**: Flask 3.0+ with SQLAlchemy ORM
-- **Database**: PostgreSQL with comprehensive schema design
+- **Framework**: Flask 3.0+ with application factory pattern and modular design
+- **Database**: PostgreSQL with comprehensive schema design and connection pooling
+- **Service Layer**: Dedicated business logic modules (ProjectService, ActivityService, AnalyticsService)
+- **Configuration**: Environment-specific configuration management with `config.py`
+- **Logging**: Comprehensive error and performance logging with rotating file handlers
 - **Authentication**: Session-based user management with login/logout
 - **Forms**: Flask-WTF for form handling and validation
 - **File Processing**: Advanced parsers for XER/XML imports with error handling
-- **API Layer**: RESTful endpoints for real-time data access
+- **API Layer**: RESTful endpoints for real-time data access with proper error handling
 
 ### Frontend Architecture
 - **UI Framework**: Bootstrap 5 with responsive design
@@ -160,6 +163,27 @@ MAX_CONTENT_LENGTH   # Maximum upload size
 
 ## Recent Changes - July 7, 2025
 
+### ✅ Major Code Modularization (Latest)
+- **Service Layer Architecture**: Created separate services directory with business logic modules
+  - `services/project_service.py`: Project operations and metrics
+  - `services/activity_service.py`: Activity management and location-based operations
+  - `services/analytics_service.py`: 5D analysis and performance calculations
+- **Configuration Management**: Centralized config in `config.py` with environment-specific settings
+- **Logging System**: Comprehensive error logging with `logger.py` module
+  - Rotating file handlers for production
+  - Performance logging for optimization
+  - User activity tracking for audit trails
+- **Clean Architecture**: Proper separation of concerns with extensions.py for database initialization
+- **Error Handling**: Enhanced error handling throughout application with proper logging
+- **Verification**: Created comprehensive test scripts for codebase validation
+
+### ✅ Linear Scheduling Enhancement  
+- Added comprehensive test data for three project types with realistic location-based activities
+- Highway 101 Extension (5km): Sequential excavation, drainage, paving with proper dependencies
+- Gas Pipeline Phase 2 (10km): Progressive trenching and installation workflows
+- Downtown Office Complex: Building project with location-based construction phases
+- Fixed template errors and null date handling for robust application stability
+
 ### ✅ Complete Implementation
 - Fixed all database models with clean, no-duplicate implementations
 - Resolved PostgreSQL enum type conflicts and table definition issues
@@ -184,4 +208,7 @@ MAX_CONTENT_LENGTH   # Maximum upload size
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language that's easy to understand.
+- **Communication style**: Simple, everyday language that's easy to understand
+- **Code structure**: Modular architecture with clean separation of concerns
+- **Error handling**: Comprehensive logging and debugging capabilities
+- **Linear scheduling**: Focus on location-based project management for infrastructure projects

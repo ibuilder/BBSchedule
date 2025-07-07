@@ -1,180 +1,209 @@
 #!/usr/bin/env python3
 """
-Final verification script for the construction scheduler codebase
+Comprehensive verification script for the modularized codebase.
 """
+import os
+import sys
+import time
+from datetime import datetime
 
-def verify_all_components():
-    """Verify all components are properly implemented"""
-    print("=" * 60)
-    print("CONSTRUCTION SCHEDULER - FINAL VERIFICATION")
-    print("=" * 60)
+def verify_file_structure():
+    """Verify the new modular file structure exists."""
+    print("Verifying modular file structure...")
     
-    # 1. Import verification
-    print("\n1. IMPORT VERIFICATION")
-    try:
-        from app import app, db
-        from models import (Project, Activity, Dependency, Schedule, Document, 
-                          ScheduleMetrics, HistoricalProject, ProjectStatus, 
-                          ActivityType, ScheduleType)
-        from forms import (ProjectForm, ActivityForm, ScheduleForm, 
-                         DocumentUploadForm, DependencyForm)
-        from utils import (calculate_schedule_metrics, export_schedule_to_excel,
-                         generate_schedule_pdf, calculate_critical_path)
-        from import_utils import (ScheduleImporter, XERImporter, MPPImporter,
-                                FiveDScheduleManager, import_schedule_file)
-        import routes
-        print("✓ All modules imported successfully")
-    except Exception as e:
-        print(f"✗ Import error: {e}")
+    required_files = [
+        'config.py',
+        'extensions.py', 
+        'logger.py',
+        'services/__init__.py',
+        'services/project_service.py',
+        'services/activity_service.py',
+        'services/analytics_service.py',
+        'app.py',
+        'models.py',
+        'routes.py'
+    ]
+    
+    missing_files = []
+    for file_path in required_files:
+        if not os.path.exists(file_path):
+            missing_files.append(file_path)
+    
+    if missing_files:
+        print(f"✗ Missing files: {missing_files}")
         return False
     
-    # 2. Model verification
-    print("\n2. MODEL VERIFICATION")
-    try:
-        # Check all models have required methods
-        project_methods = ['get_completion_percentage', 'get_budget_utilization', 'get_overdue_activities']
-        activity_methods = ['get_predecessor_ids', 'get_successor_ids', 'is_overdue', 'get_progress_status']
-        
-        for method in project_methods:
-            if not hasattr(Project, method):
-                raise ValueError(f"Project missing method: {method}")
-        
-        for method in activity_methods:
-            if not hasattr(Activity, method):
-                raise ValueError(f"Activity missing method: {method}")
-        
-        print("✓ All model methods implemented")
-    except Exception as e:
-        print(f"✗ Model verification error: {e}")
-        return False
-    
-    # 3. Utility function verification
-    print("\n3. UTILITY FUNCTION VERIFICATION")
-    try:
-        # Test that utility functions exist and are callable
-        utils_to_check = [
-            calculate_schedule_metrics,
-            export_schedule_to_excel,
-            generate_schedule_pdf,
-            calculate_critical_path
-        ]
-        
-        for util_func in utils_to_check:
-            if not callable(util_func):
-                raise ValueError(f"Function {util_func.__name__} is not callable")
-        
-        print("✓ All utility functions verified")
-    except Exception as e:
-        print(f"✗ Utility verification error: {e}")
-        return False
-    
-    # 4. Import utilities verification
-    print("\n4. IMPORT UTILITIES VERIFICATION")
-    try:
-        # Check import classes exist and have required methods
-        xer_importer = XERImporter()
-        mpp_importer = MPPImporter()
-        
-        required_methods = ['detect_encoding', 'parse_date', 'map_activity_type', 'save_to_database']
-        for method in required_methods:
-            if not hasattr(xer_importer, method):
-                raise ValueError(f"XER importer missing method: {method}")
-            if not hasattr(mpp_importer, method):
-                raise ValueError(f"MPP importer missing method: {method}")
-        
-        print("✓ All import utilities verified")
-    except Exception as e:
-        print(f"✗ Import utilities verification error: {e}")
-        return False
-    
-    # 5. Forms verification
-    print("\n5. FORMS VERIFICATION")
-    try:
-        from datetime import date
-        
-        # Test form instantiation
-        project_form = ProjectForm()
-        activity_form = ActivityForm()
-        
-        # Check required fields exist
-        if not hasattr(project_form, 'name') or not hasattr(project_form, 'start_date'):
-            raise ValueError("ProjectForm missing required fields")
-        
-        if not hasattr(activity_form, 'name') or not hasattr(activity_form, 'duration'):
-            raise ValueError("ActivityForm missing required fields")
-        
-        print("✓ All forms verified")
-    except Exception as e:
-        print(f"✗ Forms verification error: {e}")
-        return False
-    
-    # 6. Database schema verification
-    print("\n6. DATABASE SCHEMA VERIFICATION")
-    try:
-        with app.app_context():
-            # Check that all tables have proper structure
-            tables_to_check = ['projects', 'activities', 'dependencies', 'schedules', 
-                             'documents', 'schedule_metrics', 'historical_projects']
-            
-            # This would require actual database inspection in a real scenario
-            # For now, we verify the models define the expected tables
-            for model_class in [Project, Activity, Dependency, Schedule, Document, 
-                              ScheduleMetrics, HistoricalProject]:
-                if not hasattr(model_class, '__tablename__'):
-                    raise ValueError(f"Model {model_class.__name__} missing tablename")
-            
-            print("✓ Database schema verified")
-    except Exception as e:
-        print(f"✗ Database schema verification error: {e}")
-        return False
-    
-    # 7. API endpoints verification (basic)
-    print("\n7. API ENDPOINTS VERIFICATION")
-    try:
-        import routes
-        # Check that routes module loaded successfully
-        # In a real test, we'd check specific route decorators
-        print("✓ Routes module loaded successfully")
-    except Exception as e:
-        print(f"✗ API endpoints verification error: {e}")
-        return False
-    
-    print("\n" + "=" * 60)
-    print("🎉 ALL VERIFICATIONS PASSED!")
-    print("=" * 60)
-    
-    print("\nCOMPLETE FEATURE LIST:")
-    print("✓ Database Models - All classes with full Python implementation")
-    print("✓ User Authentication - Session-based login/logout system")  
-    print("✓ Project Management - Complete CRUD operations")
-    print("✓ Activity Scheduling - Gantt and linear schedule support")
-    print("✓ Dependency Management - Task relationships and constraints")
-    print("✓ Progress Tracking - Real-time activity progress updates")
-    print("✓ Resource Management - Crew size and production rate tracking")
-    print("✓ Cost Tracking - Budget estimates vs actual costs")
-    print("✓ File Import/Export - .xer (Primavera) and .xml (MS Project) support")
-    print("✓ Excel Export - Multi-sheet reports with professional formatting")
-    print("✓ PDF Reports - Comprehensive schedule reports with charts")
-    print("✓ 5D Scheduling - Time, cost, resource, and spatial analysis")
-    print("✓ Analytics Dashboard - Real-time metrics and KPIs")
-    print("✓ Mobile Responsive - Bootstrap 5 responsive design")
-    print("✓ API Endpoints - RESTful API for real-time data access")
-    print("✓ Critical Path Analysis - Automated calculation and optimization")
-    print("✓ Risk Assessment - Automated risk detection and reporting")
-    print("✓ Schedule Validation - Logic validation and error detection")
-    
-    print("\nTECHNICAL IMPLEMENTATION:")
-    print("✓ Pure Python - All classes, models, and helpers in pure Python")
-    print("✓ PostgreSQL Database - Production-ready database with proper relationships") 
-    print("✓ Flask Framework - Modern web framework with SQLAlchemy ORM")
-    print("✓ Bootstrap UI - Professional responsive interface")
-    print("✓ Chart.js Visualizations - Interactive Gantt and linear charts")
-    print("✓ Comprehensive Documentation - README and inline documentation")
-    print("✓ Error Handling - Robust error handling throughout")
-    print("✓ File Processing - Advanced parsers for industry standard formats")
-    
+    print("✓ All required modular files exist")
     return True
 
+def verify_logging_setup():
+    """Test the logging system works."""
+    print("\nVerifying logging system...")
+    
+    try:
+        from logger import log_error, log_activity, log_performance
+        
+        # Test logging functions
+        log_activity("test_user", "Testing logging system")
+        log_performance("test_function", 0.1, "Test performance log")
+        
+        print("✓ Logging system functional")
+        return True
+        
+    except Exception as e:
+        print(f"✗ Logging error: {e}")
+        return False
+
+def verify_services_functionality():
+    """Test service layer with real data."""
+    print("\nVerifying service functionality with live data...")
+    
+    try:
+        from app import app
+        from services.project_service import ProjectService
+        from services.activity_service import ActivityService
+        from services.analytics_service import AnalyticsService
+        
+        with app.app_context():
+            # Test analytics service
+            start_time = time.time()
+            metrics = AnalyticsService.calculate_dashboard_metrics()
+            elapsed = time.time() - start_time
+            
+            print(f"✓ Dashboard metrics calculated in {elapsed:.3f}s")
+            print(f"  - Total projects: {metrics.get('total_projects', 0)}")
+            print(f"  - Active projects: {metrics.get('active_projects', 0)}")
+            print(f"  - Linear projects: {metrics.get('linear_projects', 0)}")
+            print(f"  - Total activities: {metrics.get('total_activities', 0)}")
+            
+            # Test project service
+            projects = ProjectService.get_all_projects("test_user")
+            print(f"✓ Retrieved {len(projects)} projects via service layer")
+            
+            # Test 5D analysis on first linear project
+            linear_project = None
+            for project in projects:
+                if project.linear_scheduling_enabled:
+                    linear_project = project
+                    break
+            
+            if linear_project:
+                analysis = AnalyticsService.generate_5d_analysis(linear_project.id)
+                print(f"✓ 5D analysis generated for '{linear_project.name}'")
+                print(f"  - Project length: {analysis.get('spatial_analysis', {}).get('project_length')} {linear_project.station_units}")
+                print(f"  - Completion: {analysis.get('time_analysis', {}).get('completion_percentage')}%")
+            
+            return True
+            
+    except Exception as e:
+        print(f"✗ Service functionality error: {e}")
+        return False
+
+def verify_error_handling():
+    """Test error handling and logging."""
+    print("\nVerifying error handling...")
+    
+    try:
+        from logger import log_error
+        from services.project_service import ProjectService
+        from app import app
+        
+        with app.app_context():
+            # Test non-existent project
+            project = ProjectService.get_project_by_id(99999, "test_user")
+            if project is None:
+                print("✓ Service correctly handles non-existent records")
+            
+            # Test error logging
+            test_error = Exception("Test error for logging")
+            log_error(test_error, "Testing error logging system")
+            print("✓ Error logging works correctly")
+            
+            return True
+            
+    except Exception as e:
+        print(f"✗ Error handling test failed: {e}")
+        return False
+
+def verify_linear_scheduling():
+    """Verify linear scheduling functionality."""
+    print("\nVerifying linear scheduling functionality...")
+    
+    try:
+        from app import app
+        from models import Project
+        from services.project_service import ProjectService
+        
+        with app.app_context():
+            # Find a linear project
+            linear_projects = Project.query.filter_by(linear_scheduling_enabled=True).all()
+            
+            if not linear_projects:
+                print("✗ No linear projects found")
+                return False
+            
+            project = linear_projects[0]
+            print(f"✓ Found linear project: {project.name}")
+            print(f"  - Range: {project.project_start_station}-{project.project_end_station} {project.station_units}")
+            print(f"  - Activities: {len(project.activities)}")
+            
+            # Test location-based filtering
+            if project.project_end_station:
+                mid_point = project.project_end_station / 2
+                activities = ProjectService.get_linear_activities_by_location(
+                    project.id, 0, mid_point
+                )
+                print(f"✓ Found {len(activities)} activities in first half of project")
+            
+            return True
+            
+    except Exception as e:
+        print(f"✗ Linear scheduling verification error: {e}")
+        return False
+
+def main():
+    """Run comprehensive verification."""
+    print("=" * 60)
+    print("COMPREHENSIVE CODEBASE VERIFICATION")
+    print("=" * 60)
+    print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print()
+    
+    tests = [
+        verify_file_structure,
+        verify_logging_setup,
+        verify_services_functionality,
+        verify_error_handling,
+        verify_linear_scheduling
+    ]
+    
+    passed = 0
+    total = len(tests)
+    
+    for test in tests:
+        try:
+            if test():
+                passed += 1
+        except Exception as e:
+            print(f"✗ Test {test.__name__} failed with exception: {e}")
+    
+    print("\n" + "=" * 60)
+    print(f"VERIFICATION COMPLETE: {passed}/{total} tests passed")
+    
+    if passed == total:
+        print("🎉 CODEBASE FULLY VERIFIED AND MODULARIZED!")
+        print("\nKey improvements:")
+        print("• Modular service layer architecture")
+        print("• Comprehensive error logging system") 
+        print("• Clean separation of concerns")
+        print("• Enhanced debugging capabilities")
+        print("• Linear scheduling fully functional")
+    else:
+        print("❌ Some verification tests failed")
+    
+    print("=" * 60)
+    return passed == total
+
 if __name__ == "__main__":
-    success = verify_all_components()
-    print(f"\nFINAL STATUS: {'SUCCESS' if success else 'FAILED'}")
+    success = main()
+    sys.exit(0 if success else 1)

@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 from datetime import datetime, date
 from sqlalchemy import func
 from enum import Enum
