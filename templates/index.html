@@ -3,29 +3,34 @@
 {% block title %}Dashboard - Construction Project Scheduler{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h2">Project Dashboard</h1>
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h2 mb-1">Project Dashboard</h1>
+                <p class="text-muted mb-0">Manage your construction projects and schedules</p>
+            </div>
             <a href="{{ url_for('create_project') }}" class="btn btn-primary">
-                <i data-feather="plus"></i>
+                <i data-feather="plus" class="me-2"></i>
                 New Project
             </a>
         </div>
     </div>
 </div>
 
+<div class="container">
+
 <!-- Key Metrics Cards -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
-        <div class="card dashboard-card fade-in-up">
-            <div class="card-body dashboard-stat">
+        <div class="card dashboard-card dashboard-card-primary">
+            <div class="card-body py-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h3>{{ total_projects }}</h3>
-                        <p>Total Projects</p>
+                        <div class="fs-3 fw-bold text-primary">{{ total_projects }}</div>
+                        <div class="text-muted">Total Projects</div>
                     </div>
-                    <div class="align-self-center">
+                    <div class="text-primary">
                         <i data-feather="briefcase" class="feather-lg"></i>
                     </div>
                 </div>
@@ -34,15 +39,15 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card dashboard-card-success fade-in-up">
-            <div class="card-body dashboard-stat">
+        <div class="card dashboard-card dashboard-card-success">
+            <div class="card-body py-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h3>{{ active_projects }}</h3>
-                        <p>Active Projects</p>
+                        <div class="fs-3 fw-bold text-success">{{ active_projects }}</div>
+                        <div class="text-muted">Active Projects</div>
                     </div>
-                    <div class="align-self-center">
-                        <i data-feather="play" class="feather-lg"></i>
+                    <div class="text-success">
+                        <i data-feather="play-circle" class="feather-lg"></i>
                     </div>
                 </div>
             </div>
@@ -50,14 +55,14 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card dashboard-card-info fade-in-up">
-            <div class="card-body dashboard-stat">
+        <div class="card dashboard-card dashboard-card-info">
+            <div class="card-body py-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h3>{{ completed_projects }}</h3>
-                        <p>Completed</p>
+                        <div class="fs-3 fw-bold text-info">{{ completed_projects }}</div>
+                        <div class="text-muted">Completed</div>
                     </div>
-                    <div class="align-self-center">
+                    <div class="text-info">
                         <i data-feather="check-circle" class="feather-lg"></i>
                     </div>
                 </div>
@@ -66,14 +71,14 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card dashboard-card-warning fade-in-up">
-            <div class="card-body dashboard-stat">
+        <div class="card dashboard-card dashboard-card-warning">
+            <div class="card-body py-4">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h3>{{ total_projects }}</h3>
-                        <p>With 5D Analysis</p>
+                        <div class="fs-3 fw-bold text-warning">{{ total_projects }}</div>
+                        <div class="text-muted">With 5D Analysis</div>
                     </div>
-                    <div class="align-self-center">
+                    <div class="text-warning">
                         <i data-feather="layers" class="feather-lg"></i>
                     </div>
                 </div>
@@ -113,13 +118,13 @@
                                     </td>
                                     <td>
                                         {% if project.status.value == 'active' %}
-                                            <span class="badge bg-success">{{ project.status.value.title() }}</span>
+                                            <span class="badge status-active">{{ project.status.value.title() }}</span>
                                         {% elif project.status.value == 'completed' %}
-                                            <span class="badge bg-primary">{{ project.status.value.title() }}</span>
+                                            <span class="badge status-completed">{{ project.status.value.title() }}</span>
                                         {% elif project.status.value == 'cancelled' %}
-                                            <span class="badge bg-danger">{{ project.status.value.title() }}</span>
+                                            <span class="badge status-cancelled">{{ project.status.value.title() }}</span>
                                         {% else %}
-                                            <span class="badge bg-secondary">{{ project.status.value.title() }}</span>
+                                            <span class="badge status-planning">{{ project.status.value.title() }}</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ project.start_date.strftime('%Y-%m-%d') }}</td>
@@ -197,6 +202,7 @@
     </div>
 </div>
 {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}
