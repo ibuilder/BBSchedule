@@ -17,13 +17,13 @@
 
 <!-- Key Metrics Cards -->
 <div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card fade-in-up">
+            <div class="card-body dashboard-stat">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="card-title">Total Projects</h5>
-                        <h2 class="mb-0">{{ total_projects }}</h2>
+                        <h3>{{ total_projects }}</h3>
+                        <p>Total Projects</p>
                     </div>
                     <div class="align-self-center">
                         <i data-feather="briefcase" class="feather-lg"></i>
@@ -33,13 +33,13 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card-success fade-in-up">
+            <div class="card-body dashboard-stat">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="card-title">Active Projects</h5>
-                        <h2 class="mb-0">{{ active_projects }}</h2>
+                        <h3>{{ active_projects }}</h3>
+                        <p>Active Projects</p>
                     </div>
                     <div class="align-self-center">
                         <i data-feather="play" class="feather-lg"></i>
@@ -49,13 +49,13 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card-info fade-in-up">
+            <div class="card-body dashboard-stat">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="card-title">Completed</h5>
-                        <h2 class="mb-0">{{ completed_projects }}</h2>
+                        <h3>{{ completed_projects }}</h3>
+                        <p>Completed</p>
                     </div>
                     <div class="align-self-center">
                         <i data-feather="check-circle" class="feather-lg"></i>
@@ -65,16 +65,16 @@
         </div>
     </div>
     
-    <div class="col-md-3">
-        <div class="card bg-warning text-dark">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
+    <div class="col-md-3 mb-3">
+        <div class="card dashboard-card-warning fade-in-up">
+            <div class="card-body dashboard-stat">
+                <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="card-title">AI Ready</h5>
-                        <h2 class="mb-0">{{ total_projects }}</h2>
+                        <h3>{{ total_projects }}</h3>
+                        <p>With 5D Analysis</p>
                     </div>
                     <div class="align-self-center">
-                        <i data-feather="cpu" class="feather-lg"></i>
+                        <i data-feather="layers" class="feather-lg"></i>
                     </div>
                 </div>
             </div>
