@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Dependencies - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h2 mb-1">Manage Dependencies</h1>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-secondary">
+                <i data-feather="arrow-left" class="me-2"></i>
+                Back to Project
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Add New Dependency -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="link" class="me-2"></i>
+                        Add New Dependency
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.predecessor_id.label(class="form-label") }}
+                            {{ form.predecessor_id(class="form-select") }}
+                            <div class="form-text">Activity that must be completed first</div>
+                            {% if form.predecessor_id.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.predecessor_id.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.successor_id.label(class="form-label") }}
+                            {{ form.successor_id(class="form-select") }}
+                            <div class="form-text">Activity that depends on the predecessor</div>
+                            {% if form.successor_id.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.successor_id.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.dependency_type.label(class="form-label") }}
+                                {{ form.dependency_type(class="form-select") }}
+                                {% if form.dependency_type.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.dependency_type.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.lag_days.label(class="form-label") }}
+                                {{ form.lag_days(class="form-control") }}
+                                <div class="form-text">Delay between activities (days)</div>
+                                {% if form.lag_days.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.lag_days.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {{ form.submit(class="btn btn-primary") }}
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dependency Types Help -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="help-circle" class="me-2"></i>
+                        Dependency Types
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <dl class="row">
+                                <dt class="col-sm-3">FS</dt>
+                                <dd class="col-sm-9">Finish to Start - Predecessor must finish before successor can start</dd>
+                                
+                                <dt class="col-sm-3">SS</dt>
+                                <dd class="col-sm-9">Start to Start - Both activities can start at the same time</dd>
+                                
+                                <dt class="col-sm-3">FF</dt>
+                                <dd class="col-sm-9">Finish to Finish - Both activities must finish at the same time</dd>
+                                
+                                <dt class="col-sm-3">SF</dt>
+                                <dd class="col-sm-9">Start to Finish - Successor cannot finish until predecessor starts</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Existing Dependencies -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="git-branch" class="me-2"></i>
+                        Current Dependencies
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if dependencies %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Predecessor</th>
+                                        <th>Successor</th>
+                                        <th>Type</th>
+                                        <th>Lag (days)</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for dependency in dependencies %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ dependency.predecessor_activity.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ dependency.predecessor_activity.activity_type.value.title() }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>{{ dependency.successor_activity.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ dependency.successor_activity.activity_type.value.title() }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ dependency.dependency_type }}</span>
+                                        </td>
+                                        <td>{{ dependency.lag_days }}</td>
+                                        <td>
+                                            <form method="POST" action="{{ url_for('delete_dependency', dependency_id=dependency.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="return confirm('Are you sure you want to delete this dependency?')">
+                                                    <i data-feather="trash-2"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i data-feather="git-branch" class="feather-xl text-muted mb-3"></i>
+                            <h4 class="text-muted">No Dependencies</h4>
+                            <p class="text-muted">Add dependencies to define task relationships and sequencing.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    feather.replace();
+</script>
+{% endblock %}

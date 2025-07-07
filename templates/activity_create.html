@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Add Activity - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h2 mb-1">Add New Activity</h1>
+                <p class="text-muted mb-0">{{ project.name }}</p>
+            </div>
+            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-secondary">
+                <i data-feather="arrow-left" class="me-2"></i>
+                Back to Project
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Activity Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control") }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.name.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.activity_type.label(class="form-label") }}
+                                {{ form.activity_type(class="form-select") }}
+                                {% if form.activity_type.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.activity_type.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.description.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.duration.label(class="form-label") }}
+                                {{ form.duration(class="form-control") }}
+                                {% if form.duration.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.duration.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                {{ form.start_date.label(class="form-label") }}
+                                {{ form.start_date(class="form-control") }}
+                                {% if form.start_date.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.start_date.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                {{ form.end_date.label(class="form-label") }}
+                                {{ form.end_date(class="form-control") }}
+                                {% if form.end_date.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.end_date.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.quantity.label(class="form-label") }}
+                                {{ form.quantity(class="form-control") }}
+                                {% if form.quantity.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.quantity.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.unit.label(class="form-label") }}
+                                {{ form.unit(class="form-control") }}
+                                {% if form.unit.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.unit.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Resource Management Section -->
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <h6 class="text-primary">
+                                    <i data-feather="users" class="me-2"></i>
+                                    Resource Requirements
+                                </h6>
+                                <hr class="mt-2 mb-3">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.resource_crew_size.label(class="form-label") }}
+                                {{ form.resource_crew_size(class="form-control") }}
+                                <div class="form-text">Number of workers needed for this activity</div>
+                                {% if form.resource_crew_size.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.resource_crew_size.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.production_rate.label(class="form-label") }}
+                                {{ form.production_rate(class="form-control") }}
+                                <div class="form-text">Work output per day (quantity/day)</div>
+                                {% if form.production_rate.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.production_rate.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Cost Management Section -->
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <h6 class="text-success">
+                                    <i data-feather="dollar-sign" class="me-2"></i>
+                                    Cost Information
+                                </h6>
+                                <hr class="mt-2 mb-3">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.cost_estimate.label(class="form-label") }}
+                                {{ form.cost_estimate(class="form-control") }}
+                                <div class="form-text">Estimated cost for this activity</div>
+                                {% if form.cost_estimate.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.cost_estimate.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.actual_cost.label(class="form-label") }}
+                                {{ form.actual_cost(class="form-control") }}
+                                <div class="form-text">Actual cost incurred (update as work progresses)</div>
+                                {% if form.actual_cost.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.actual_cost.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Location/Spatial Information Section -->
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <h6 class="text-info">
+                                    <i data-feather="map-pin" class="me-2"></i>
+                                    Location Information (Linear Scheduling)
+                                </h6>
+                                <hr class="mt-2 mb-3">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.location_start.label(class="form-label") }}
+                                {{ form.location_start(class="form-control") }}
+                                <div class="form-text">Starting location/station (e.g., Station 0+00, Floor 1)</div>
+                                {% if form.location_start.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.location_start.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.location_end.label(class="form-label") }}
+                                {{ form.location_end(class="form-control") }}
+                                <div class="form-text">Ending location/station (e.g., Station 5+00, Floor 10)</div>
+                                {% if form.location_end.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.location_end.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control", rows="3") }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.notes.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    feather.replace();
+</script>
+{% endblock %}
