@@ -208,6 +208,10 @@ class ScheduleMetrics(db.Model):
     in_progress_activities = db.Column(db.Integer, default=0)
     overdue_activities = db.Column(db.Integer, default=0)
     
+    # Additional metrics
+    resource_utilization = db.Column(db.Float, default=0)
+    critical_path_length = db.Column(db.Integer, default=0)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
