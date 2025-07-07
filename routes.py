@@ -90,7 +90,12 @@ def index():
         return render_template('index.html', 
                              projects=projects,
                              recent_activities=recent_activities,
-                             metrics=dashboard_metrics)
+                             metrics=dashboard_metrics,
+                             total_projects=dashboard_metrics.get('total_projects', 0),
+                             active_projects=dashboard_metrics.get('active_projects', 0),
+                             total_activities=dashboard_metrics.get('total_activities', 0),
+                             completed_activities=dashboard_metrics.get('completed_activities', 0),
+                             avg_completion=dashboard_metrics.get('completion_rate', 0))
                              
     except Exception as e:
         log_error(e, "Dashboard loading error")
@@ -98,7 +103,12 @@ def index():
         return render_template('index.html', 
                              projects=[],
                              recent_activities=[],
-                             metrics={})
+                             metrics={},
+                             total_projects=0,
+                             active_projects=0,
+                             total_activities=0,
+                             completed_activities=0,
+                             avg_completion=0)
 
 @app.route('/projects')
 @login_required
