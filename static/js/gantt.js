@@ -194,61 +194,6 @@ function prepareGanttData(projectData) {
         datasets: datasets
     };
 }
-    const completedData = ganttData.map(activity => {
-        if (!activity.start_date) return null;
-        
-        const startDate = new Date(activity.start_date);
-        const duration = activity.duration;
-        const completedDuration = Math.floor(duration * (activity.progress / 100));
-        
-        return completedDuration > 0 ? {
-            x: [startDate, new Date(startDate.getTime() + completedDuration * 24 * 60 * 60 * 1000)],
-            y: labels.indexOf(activity.name)
-        } : null;
-    });
-    
-    // Remaining portion
-    const remainingData = ganttData.map(activity => {
-        if (!activity.start_date) return null;
-        
-        const startDate = new Date(activity.start_date);
-        const duration = activity.duration;
-        const completedDuration = Math.floor(duration * (activity.progress / 100));
-        const remainingDuration = duration - completedDuration;
-        
-        if (remainingDuration > 0) {
-            const remainingStart = new Date(startDate.getTime() + completedDuration * 24 * 60 * 60 * 1000);
-            return {
-                x: [remainingStart, new Date(remainingStart.getTime() + remainingDuration * 24 * 60 * 60 * 1000)],
-                y: labels.indexOf(activity.name)
-            };
-        }
-        return null;
-    });
-    
-    // Add completed work dataset
-    datasets.push({
-        label: 'Completed',
-        data: completedData,
-        backgroundColor: 'rgba(40, 167, 69, 0.8)',
-        borderColor: 'rgba(40, 167, 69, 1)',
-        borderWidth: 1
-    });
-    
-    // Add remaining work dataset
-    datasets.push({
-        label: 'Remaining',
-        data: remainingData,
-        backgroundColor: 'rgba(0, 123, 255, 0.6)',
-        borderColor: 'rgba(0, 123, 255, 1)',
-        borderWidth: 1
-    });
-    
-    return {
-        labels: labels,
-        datasets: datasets
-    };
-}
 
 /**
  * Show activity details in a modal or sidebar

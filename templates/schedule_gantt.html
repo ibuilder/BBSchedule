@@ -142,6 +142,21 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/gantt.js') }}"></script>
 <script>
+// Define error message function
+function showErrorMessage(message) {
+    const container = document.getElementById('gantt-chart-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i data-feather="alert-circle" class="feather-xl text-danger mb-3"></i>
+                <h4 class="text-danger">Chart Error</h4>
+                <p class="text-muted">${message}</p>
+            </div>
+        `;
+        feather.replace();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Wait for Chart.js to be fully loaded
     if (typeof Chart === 'undefined') {
