@@ -169,10 +169,31 @@ function prepareGanttData(projectData) {
     const labels = ganttData.map(activity => activity.name);
     const projectStart = new Date(projectData.start_date);
     
-    // Calculate datasets for different activity states
-    const datasets = [];
+    // Create timeline data for horizontal bar chart
+    const data = ganttData.map(activity => activity.duration);
     
-    // Completed portion
+    // Create datasets for Chart.js with different colors for different progress levels
+    const backgroundColors = ganttData.map(activity => {
+        if (activity.progress >= 100) return 'rgba(40, 167, 69, 0.8)'; // Green for completed
+        if (activity.progress >= 50) return 'rgba(255, 193, 7, 0.8)'; // Yellow for in progress
+        return 'rgba(108, 117, 125, 0.8)'; // Gray for not started
+    });
+    
+    const datasets = [
+        {
+            label: 'Duration (days)',
+            data: data,
+            backgroundColor: backgroundColors,
+            borderColor: backgroundColors.map(color => color.replace('0.8', '1')),
+            borderWidth: 1
+        }
+    ];
+    
+    return {
+        labels: labels,
+        datasets: datasets
+    };
+}
     const completedData = ganttData.map(activity => {
         if (!activity.start_date) return null;
         
