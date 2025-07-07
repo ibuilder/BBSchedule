@@ -1,8 +1,8 @@
-# Construction Project Scheduler
+# BBSchedule - Construction Project Scheduler
 
 ## Overview
 
-This is a comprehensive Flask-based web application for managing construction project schedules with advanced 5D scheduling capabilities. The system supports both Gantt chart and linear scheduling methodologies, providing enterprise-level project management for construction teams. Key features include real-time progress tracking, complete user authentication, file import/export capabilities, and sophisticated analytics dashboard.
+BBSchedule is a comprehensive Flask-based web application developed for the Balfour Beatty AI Hackathon, designed for managing construction project schedules with advanced 5D scheduling capabilities. The system supports both Gantt chart and linear scheduling methodologies, providing enterprise-level project management for construction teams. Key features include real-time progress tracking, complete user authentication, file import/export capabilities, and sophisticated analytics dashboard.
 
 ## System Architecture
 
@@ -163,7 +163,27 @@ MAX_CONTENT_LENGTH   # Maximum upload size
 
 ## Recent Changes - July 7, 2025
 
-### ✅ Major Code Modularization (Latest)
+### ✅ Enhanced Linear Scheduling Features (Latest)
+- **Professional Calendar View**: Implemented FullCalendar integration with comprehensive scheduling interface
+  - Real-time activity management with drag-and-drop functionality
+  - Multi-view support (month, week, day, agenda views)
+  - Interactive activity creation and editing from calendar
+  - Color-coded activities by status and critical path
+- **Advanced Scheduling Service**: Created `services/scheduling_service.py` with enterprise-level algorithms
+  - Critical Path Method (CPM) with forward/backward pass calculations
+  - Resource conflict detection and optimization recommendations
+  - Timeline view generation with multiple period options
+  - Schedule performance metrics and variance analysis
+- **Gantt Chart Integration**: Interactive Gantt charts with Chart.js
+  - Critical path highlighting and activity dependencies
+  - Real-time progress tracking and visual indicators
+  - Professional construction scheduling visualization
+- **API Enhancement**: Complete REST API for calendar and scheduling operations
+  - Calendar activities endpoint with filtering capabilities
+  - Real-time activity updates and completion tracking
+  - Statistics and metrics endpoints for dashboard integration
+
+### ✅ Major Code Modularization  
 - **Service Layer Architecture**: Created separate services directory with business logic modules
   - `services/project_service.py`: Project operations and metrics
   - `services/activity_service.py`: Activity management and location-based operations

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ project.name }} - Construction Project Scheduler{% endblock %}
+{% block title %}{{ project.name }} - BBSchedule{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -125,12 +125,12 @@
                         Add Activity
                     </a>
                     
-                    <a href="{{ url_for('manage_dependencies', project_id=project.id) }}" class="btn btn-outline-primary">
+                    <a href="{{ url_for('dependencies') }}" class="btn btn-outline-primary">
                         <i data-feather="link"></i>
                         Manage Dependencies
                     </a>
                     
-                    <a href="{{ url_for('upload_document', project_id=project.id) }}" class="btn btn-outline-success">
+                    <a href="{{ url_for('import_schedule') }}" class="btn btn-outline-success">
                         <i data-feather="upload"></i>
                         Upload Documents
                     </a>

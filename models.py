@@ -58,6 +58,15 @@ class Project(db.Model):
     schedules = db.relationship('Schedule', backref='project', lazy=True, cascade='all, delete-orphan')
     documents = db.relationship('Document', backref='project', lazy=True, cascade='all, delete-orphan')
     
+    def calculate_completion_percentage(self):
+        """Calculate project completion percentage based on activities."""
+        activities = Activity.query.filter_by(project_id=self.id).all()
+        if not activities:
+            return 0.0
+        
+        total_progress = sum(activity.progress or 0 for activity in activities)
+        return round(total_progress / len(activities), 1)
+    
     def __repr__(self):
         return f'<Project {self.name}>'
     

@@ -168,11 +168,15 @@ def project_detail(project_id):
         # Get activities using service
         activities = ActivityService.get_activities_by_project(project_id, user_id)
         
+        # Calculate completion percentage
+        completion_percentage = project.calculate_completion_percentage() if project else 0
+        
         return render_template('project_detail.html', 
                              project=project, 
                              activities=activities,
                              metrics=metrics,
-                             schedule_metrics=schedule_metrics)
+                             schedule_metrics=schedule_metrics,
+                             completion_percentage=completion_percentage)
                              
     except Exception as e:
         log_error(e, f"Project detail error for project {project_id}")
@@ -234,6 +238,34 @@ def create_activity(project_id):
         log_error(e, f"Activity creation error for project {project_id}")
         flash('Error creating activity', 'error')
         return redirect(url_for('project_detail', project_id=project_id))
+
+@app.route('/dependencies')
+@login_required
+def dependencies():
+    """Manage project dependencies."""
+    try:
+        user_id = session.get('user_id')
+        projects = ProjectService.get_projects_by_user(user_id)
+        
+        # Get all dependencies across projects
+        dependencies = []
+        for project in projects:
+            for activity in project.activities:
+                for dep in activity.predecessor_dependencies:
+                    dependencies.append({
+                        'project': project,
+                        'successor': dep.successor,
+                        'predecessor': dep.predecessor,
+                        'type': dep.dependency_type,
+                        'lag': dep.lag_days
+                    })
+        
+        return render_template('dependencies.html', dependencies=dependencies, projects=projects)
+        
+    except Exception as e:
+        log_error(e, "Dependencies view error")
+        flash('Error loading dependencies', 'error')
+        return redirect(url_for('index'))
 
 @app.route('/import')
 @login_required
