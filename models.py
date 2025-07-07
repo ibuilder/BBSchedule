@@ -43,6 +43,13 @@ class Project(db.Model):
     location = db.Column(db.String(200))
     budget = db.Column(db.Float)
     created_by = db.Column(db.String(100))
+    
+    # Linear scheduling fields
+    linear_scheduling_enabled = db.Column(db.Boolean, default=False)
+    project_start_station = db.Column(db.Float)  # Start chainage/station
+    project_end_station = db.Column(db.Float)    # End chainage/station  
+    station_units = db.Column(db.String(10), default='m')  # m, ft, km, mi
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -78,6 +85,32 @@ class Project(db.Model):
         if not self.activities:
             return 0
         return sum(activity.duration for activity in self.activities)
+    
+    def get_project_length(self):
+        """Get total project length for linear scheduling (max end location)"""
+        if not self.activities:
+            return 0
+        locations = [a.location_end for a in self.activities if a.location_end is not None]
+        return max(locations) if locations else 0
+    
+    def get_activities_by_location(self, start_station=None, end_station=None):
+        """Get activities within a specific location range"""
+        if start_station is None and end_station is None:
+            return self.activities
+        
+        filtered = []
+        for activity in self.activities:
+            if activity.location_start is not None and activity.location_end is not None:
+                activity_start = min(activity.location_start, activity.location_end)
+                activity_end = max(activity.location_start, activity.location_end)
+                
+                if start_station is not None and activity_end < start_station:
+                    continue
+                if end_station is not None and activity_start > end_station:
+                    continue
+                filtered.append(activity)
+        
+        return filtered
 
 class Activity(db.Model):
     __tablename__ = 'activities'

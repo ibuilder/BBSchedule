@@ -16,6 +16,18 @@ class ProjectForm(FlaskForm):
     building_type = StringField('Building Type', validators=[Optional(), Length(max=100)])
     location = StringField('Location', validators=[Optional(), Length(max=200)])
     budget = FloatField('Budget', validators=[Optional(), NumberRange(min=0)])
+    
+    # Linear scheduling project settings
+    linear_scheduling = SelectField('Enable Linear Scheduling', choices=[('false', 'No'), ('true', 'Yes')], default='false')
+    project_start_station = FloatField('Project Start Station/Chainage', validators=[Optional(), NumberRange(min=0)])
+    project_end_station = FloatField('Project End Station/Chainage', validators=[Optional(), NumberRange(min=0)])
+    station_units = SelectField('Station Units', choices=[
+        ('m', 'Meters'),
+        ('ft', 'Feet'),
+        ('km', 'Kilometers'),
+        ('mi', 'Miles')
+    ], default='m')
+    
     submit = SubmitField('Create Project')
 
 class ActivityForm(FlaskForm):
@@ -36,6 +48,10 @@ class ActivityForm(FlaskForm):
     location_end = FloatField('End Location/Station', validators=[Optional(), NumberRange(min=0)])
     notes = TextAreaField('Notes', validators=[Optional(), Length(max=500)])
     submit = SubmitField('Save Activity')
+    
+    def __init__(self, project=None, *args, **kwargs):
+        super(ActivityForm, self).__init__(*args, **kwargs)
+        self.project = project
 
 class ScheduleForm(FlaskForm):
     name = StringField('Schedule Name', validators=[DataRequired(), Length(min=1, max=200)])

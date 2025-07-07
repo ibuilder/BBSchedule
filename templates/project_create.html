@@ -168,8 +168,40 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Linear Scheduling Configuration -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i data-feather="map"></i> Linear Scheduling Configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    {{ form.linear_scheduling.label(class="form-label") }}
+                                    {{ form.linear_scheduling(class="form-select", onchange="toggleLinearScheduling()") }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.station_units.label(class="form-label") }}
+                                    {{ form.station_units(class="form-select") }}
+                                </div>
+                            </div>
+                            
+                            <div class="row" id="linear-scheduling-fields" style="display: none;">
+                                <div class="col-md-6">
+                                    {{ form.project_start_station.label(class="form-label") }}
+                                    {{ form.project_start_station(class="form-control", placeholder="e.g., 0") }}
+                                    <div class="form-text">Starting station/chainage for linear project</div>
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.project_end_station.label(class="form-label") }}
+                                    {{ form.project_end_station(class="form-control", placeholder="e.g., 1000") }}
+                                    <div class="form-text">Ending station/chainage for linear project</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between mt-4">
                         <a href="{% if project %}{{ url_for('project_detail', project_id=project.id) }}{% else %}{{ url_for('index') }}{% endif %}" class="btn btn-secondary">
                             <i data-feather="arrow-left"></i>
                             Cancel
@@ -185,6 +217,25 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleLinearScheduling() {
+        const linearEnabled = document.querySelector('select[name="linear_scheduling"]').value === 'true';
+        const linearFields = document.getElementById('linear-scheduling-fields');
+        
+        if (linearEnabled) {
+            linearFields.style.display = 'block';
+        } else {
+            linearFields.style.display = 'none';
+        }
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleLinearScheduling();
+        feather.replace();
+    });
+</script>
 {% endblock %}
 
 {% block scripts %}

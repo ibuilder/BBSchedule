@@ -210,6 +210,12 @@ def edit_project(project_id):
         project.building_type = form.building_type.data
         project.location = form.location.data
         project.budget = form.budget.data
+        
+        # Linear scheduling fields
+        project.linear_scheduling_enabled = form.linear_scheduling.data == 'true'
+        project.project_start_station = form.project_start_station.data
+        project.project_end_station = form.project_end_station.data
+        project.station_units = form.station_units.data
         project.updated_at = datetime.utcnow()
         
         db.session.commit()
