@@ -3,8 +3,9 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, s
 from werkzeug.utils import secure_filename
 from app import app, db
 from models import Project, Activity, Dependency, Schedule, Document, ScheduleMetrics, ProjectStatus, ActivityType, ScheduleType
-from forms import ProjectForm, ActivityForm, ScheduleForm, DocumentUploadForm, DependencyForm
+from forms import ProjectForm, ActivityForm, ScheduleForm, DocumentUploadForm, DependencyForm, ScheduleImportForm, FiveDAnalysisForm
 from utils import calculate_schedule_metrics, export_schedule_to_excel, generate_schedule_pdf
+from import_utils import import_schedule_file, FiveDScheduleManager
 from datetime import datetime, date
 import json
 
@@ -355,6 +356,104 @@ def delete_project(project_id):
     db.session.commit()
     flash('Project deleted successfully!', 'success')
     return redirect(url_for('index'))
+
+@app.route('/import_schedule', methods=['GET', 'POST'])
+def import_schedule():
+    """Import external schedule files (XER, MPP, XML)"""
+    form = ScheduleImportForm()
+    
+    # Populate existing projects dropdown
+    projects = Project.query.all()
+    form.existing_project.choices = [(0, 'Select Project')] + [(p.id, p.name) for p in projects]
+    
+    if form.validate_on_submit():
+        file = form.file.data
+        if file:
+            # Save uploaded file
+            filename = secure_filename(file.filename)
+            uploads_dir = app.config.get('UPLOAD_FOLDER', 'uploads')
+            os.makedirs(uploads_dir, exist_ok=True)
+            file_path = os.path.join(uploads_dir, filename)
+            file.save(file_path)
+            
+            try:
+                # Import the schedule
+                project_name = form.project_name.data if form.project_name.data else None
+                imported_project, messages = import_schedule_file(file_path, project_name)
+                
+                if imported_project:
+                    flash('Schedule imported successfully!', 'success')
+                    if messages:
+                        for msg in messages:
+                            flash(f'Warning: {msg}', 'warning')
+                    return redirect(url_for('project_detail', project_id=imported_project.id))
+                else:
+                    for error in messages:
+                        flash(f'Import error: {error}', 'error')
+                    
+            except Exception as e:
+                flash(f'Import failed: {str(e)}', 'error')
+            finally:
+                # Clean up uploaded file
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+    
+    return render_template('import_schedule.html', form=form)
+
+@app.route('/project/<int:project_id>/5d_analysis', methods=['GET', 'POST'])
+def five_d_analysis(project_id):
+    """Generate 5D schedule analysis"""
+    project = Project.query.get_or_404(project_id)
+    form = FiveDAnalysisForm()
+    
+    if form.validate_on_submit():
+        try:
+            # Generate 5D analysis
+            manager = FiveDScheduleManager(project)
+            analysis_data = manager.calculate_5d_metrics()
+            
+            # Filter analysis based on selected type
+            analysis_type = form.analysis_type.data
+            if analysis_type != 'complete':
+                analysis_data = {analysis_type: analysis_data.get(analysis_type, {})}
+            
+            # Save metrics to database
+            metrics = ScheduleMetrics(
+                project_id=project.id,
+                schedule_performance_index=analysis_data.get('time_performance', {}).get('schedule_performance_index', 0),
+                cost_performance_index=analysis_data.get('cost_performance', {}).get('cost_performance_index', 0),
+                planned_value=analysis_data.get('cost_performance', {}).get('planned_value', 0),
+                earned_value=analysis_data.get('cost_performance', {}).get('earned_value', 0),
+                actual_cost=analysis_data.get('cost_performance', {}).get('actual_cost', 0),
+                resource_utilization=analysis_data.get('resource_utilization', {}).get('utilization_percentage', 0),
+                created_at=datetime.utcnow()
+            )
+            
+            db.session.add(metrics)
+            db.session.commit()
+            
+            flash('5D analysis generated successfully!', 'success')
+            return render_template('5d_analysis.html', 
+                                 project=project, 
+                                 analysis_data=analysis_data,
+                                 form=form)
+            
+        except Exception as e:
+            flash(f'Analysis failed: {str(e)}', 'error')
+    
+    return render_template('5d_analysis.html', project=project, form=form)
+
+@app.route('/project/<int:project_id>/5d_metrics')
+def five_d_metrics_api(project_id):
+    """API endpoint for 5D metrics data"""
+    project = Project.query.get_or_404(project_id)
+    
+    try:
+        manager = FiveDScheduleManager(project)
+        metrics = manager.calculate_5d_metrics()
+        return jsonify(metrics)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found_error(error):

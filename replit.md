@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Flask-based web application for managing construction project schedules. The system supports both Gantt chart and linear scheduling methodologies, providing comprehensive project management capabilities for construction teams. The application handles project planning, activity scheduling, resource management, and progress tracking with visual scheduling tools.
+This is a Flask-based web application for managing construction project schedules. The system supports both Gantt chart and linear scheduling methodologies, providing comprehensive project management capabilities for construction teams. The application handles project planning, activity scheduling, resource management, and progress tracking with visual scheduling tools. Key features include importing existing schedules from Primavera P6 (.xer) and Microsoft Project (.xml, .mpp) files, and advanced 5D scheduling analysis combining time, cost, resources, and spatial dimensions.
 
 ## System Architecture
 
@@ -56,6 +56,13 @@ This is a Flask-based web application for managing construction project schedule
 - Metrics calculation for project dashboards
 - Resource utilization tracking
 
+### Import Utilities (import_utils.py)
+- Primavera P6 (.xer) file import and parsing
+- Microsoft Project (.xml, .mpp) file import support
+- 5D scheduling analysis and metrics calculation
+- Spatial conflict detection and risk assessment
+- Cost and resource performance analysis
+
 ## Data Flow
 
 1. **Project Creation**: Users create projects with basic metadata
@@ -106,6 +113,8 @@ This is a Flask-based web application for managing construction project schedule
 ## Changelog
 
 - July 07, 2025. Initial setup
+- July 07, 2025. Added schedule import functionality (.xer, .mpp, .xml files)
+- July 07, 2025. Implemented 5D scheduling analysis capabilities
 
 ## User Preferences
 

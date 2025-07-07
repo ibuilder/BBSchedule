@@ -68,3 +68,38 @@ class DependencyForm(FlaskForm):
     ], default='FS')
     lag_days = IntegerField('Lag Days', validators=[Optional(), NumberRange(min=0)], default=0)
     submit = SubmitField('Add Dependency')
+
+class ScheduleImportForm(FlaskForm):
+    file = FileField('Schedule File', validators=[
+        FileRequired(),
+        FileAllowed(['xer', 'xml', 'mpp'], 
+                   'Only Primavera XER, Microsoft Project XML, or MPP files are allowed.')
+    ])
+    project_name = StringField('Project Name (Optional)', validators=[Optional(), Length(max=200)])
+    import_type = SelectField('Import Type', choices=[
+        ('new', 'Create New Project'),
+        ('merge', 'Merge with Existing Project')
+    ], default='new')
+    existing_project = SelectField('Existing Project (for merge)', coerce=int, validators=[Optional()])
+    submit = SubmitField('Import Schedule')
+
+class FiveDAnalysisForm(FlaskForm):
+    analysis_type = SelectField('Analysis Type', choices=[
+        ('complete', 'Complete 5D Analysis'),
+        ('cost', 'Cost Performance Analysis'),
+        ('resource', 'Resource Utilization Analysis'),
+        ('spatial', 'Spatial Conflict Analysis'),
+        ('productivity', 'Productivity Analysis'),
+        ('risk', 'Risk Assessment')
+    ], default='complete')
+    include_3d_model = SelectField('Include 3D Visualization', choices=[
+        ('yes', 'Yes - Generate 3D Timeline'),
+        ('no', 'No - Standard Analysis')
+    ], default='no')
+    time_period = SelectField('Analysis Period', choices=[
+        ('current', 'Current Status'),
+        ('weekly', 'Weekly Analysis'),
+        ('monthly', 'Monthly Analysis'),
+        ('full', 'Full Project Timeline')
+    ], default='current')
+    submit = SubmitField('Generate 5D Analysis')
