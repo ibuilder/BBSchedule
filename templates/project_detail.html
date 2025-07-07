@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Construction Project Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2">{{ project.name }}</h1>
+                <p class="text-muted">{{ project.description or 'No description available' }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('edit_project', project_id=project.id) }}" class="btn btn-outline-primary">
+                    <i data-feather="edit"></i>
+                    Edit
+                </a>
+                <a href="{{ url_for('gantt_chart', project_id=project.id) }}" class="btn btn-success">
+                    <i data-feather="bar-chart-2"></i>
+                    Gantt Chart
+                </a>
+                <a href="{{ url_for('linear_schedule', project_id=project.id) }}" class="btn btn-info">
+                    <i data-feather="trending-up"></i>
+                    Linear Schedule
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i data-feather="calendar" class="feather-lg text-primary mb-2"></i>
+                <h5>Start Date</h5>
+                <p class="card-text">{{ project.start_date.strftime('%Y-%m-%d') }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i data-feather="flag" class="feather-lg text-success mb-2"></i>
+                <h5>Status</h5>
+                <p class="card-text">{{ project.status.value.title() }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i data-feather="activity" class="feather-lg text-info mb-2"></i>
+                <h5>Completion</h5>
+                <p class="card-text">{{ "%.1f"|format(completion_percentage) }}%</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i data-feather="clock" class="feather-lg text-warning mb-2"></i>
+                <h5>Duration</h5>
+                <p class="card-text">{{ total_duration }} days</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Details -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Project Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Building Type:</dt>
+                            <dd class="col-sm-7">{{ project.building_type or 'N/A' }}</dd>
+                            
+                            <dt class="col-sm-5">Total SF:</dt>
+                            <dd class="col-sm-7">{{ "{:,.0f}".format(project.total_sf) if project.total_sf else 'N/A' }}</dd>
+                            
+                            <dt class="col-sm-5">Floor Count:</dt>
+                            <dd class="col-sm-7">{{ project.floor_count or 'N/A' }}</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Location:</dt>
+                            <dd class="col-sm-7">{{ project.location or 'N/A' }}</dd>
+                            
+                            <dt class="col-sm-5">Budget:</dt>
+                            <dd class="col-sm-7">${{ "{:,.0f}".format(project.budget) if project.budget else 'N/A' }}</dd>
+                            
+                            <dt class="col-sm-5">End Date:</dt>
+                            <dd class="col-sm-7">{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else 'TBD' }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('create_activity', project_id=project.id) }}" class="btn btn-primary">
+                        <i data-feather="plus"></i>
+                        Add Activity
+                    </a>
+                    
+                    <a href="{{ url_for('manage_dependencies', project_id=project.id) }}" class="btn btn-outline-primary">
+                        <i data-feather="link"></i>
+                        Manage Dependencies
+                    </a>
+                    
+                    <a href="{{ url_for('upload_document', project_id=project.id) }}" class="btn btn-outline-success">
+                        <i data-feather="upload"></i>
+                        Upload Documents
+                    </a>
+                    
+                    <a href="{{ url_for('project_reports', project_id=project.id) }}" class="btn btn-outline-info">
+                        <i data-feather="file-text"></i>
+                        Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activities Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Project Activities</h5>
+                <a href="{{ url_for('create_activity', project_id=project.id) }}" class="btn btn-sm btn-primary">
+                    <i data-feather="plus"></i>
+                    Add Activity
+                </a>
+            </div>
+            <div class="card-body">
+                {% if activities %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Activity</th>
+                                    <th>Type</th>
+                                    <th>Duration</th>
+                                    <th>Progress</th>
+                                    <th>Start Date</th>
+                                    <th>Crew Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in activities %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ activity.name }}</strong>
+                                        {% if activity.description %}
+                                            <br><small class="text-muted">{{ activity.description }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ activity.activity_type.value.title() }}</td>
+                                    <td>{{ activity.duration }} days</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" style="width: {{ activity.progress }}%">
+                                                {{ activity.progress }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ activity.start_date.strftime('%Y-%m-%d') if activity.start_date else 'TBD' }}</td>
+                                    <td>{{ activity.resource_crew_size or 'N/A' }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('edit_activity', activity_id=activity.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i data-feather="edit"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('delete_activity', activity_id=activity.id) }}" 
+                                                  style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this activity?');">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i data-feather="trash-2"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="list" class="feather-xl text-muted mb-3"></i>
+                        <h5 class="text-muted">No Activities Yet</h5>
+                        <p class="text-muted">Add activities to start building your project schedule.</p>
+                        <a href="{{ url_for('create_activity', project_id=project.id) }}" class="btn btn-primary">
+                            <i data-feather="plus"></i>
+                            Add First Activity
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Project Documents</h5>
+                <a href="{{ url_for('upload_document', project_id=project.id) }}" class="btn btn-sm btn-success">
+                    <i data-feather="upload"></i>
+                    Upload Document
+                </a>
+            </div>
+            <div class="card-body">
+                {% if documents %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Document Name</th>
+                                    <th>Type</th>
+                                    <th>Size</th>
+                                    <th>Upload Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for document in documents %}
+                                <tr>
+                                    <td>{{ document.original_filename }}</td>
+                                    <td>{{ document.document_type.title() }}</td>
+                                    <td>{{ "%.1f"|format(document.file_size / 1024) }} KB</td>
+                                    <td>{{ document.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="file" class="feather-xl text-muted mb-3"></i>
+                        <h5 class="text-muted">No Documents Uploaded</h5>
+                        <p class="text-muted">Upload project plans, BIM files, and other documents for AI processing.</p>
+                        <a href="{{ url_for('upload_document', project_id=project.id) }}" class="btn btn-success">
+                            <i data-feather="upload"></i>
+                            Upload First Document
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    feather.replace();
+</script>
+{% endblock %}

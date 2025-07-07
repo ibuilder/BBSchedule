@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Construction Project Scheduler{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">Project Dashboard</h1>
+            <a href="{{ url_for('create_project') }}" class="btn btn-primary">
+                <i data-feather="plus"></i>
+                New Project
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Total Projects</h5>
+                        <h2 class="mb-0">{{ total_projects }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i data-feather="briefcase" class="feather-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Active Projects</h5>
+                        <h2 class="mb-0">{{ active_projects }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i data-feather="play" class="feather-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Completed</h5>
+                        <h2 class="mb-0">{{ completed_projects }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i data-feather="check-circle" class="feather-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">AI Ready</h5>
+                        <h2 class="mb-0">{{ total_projects }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i data-feather="cpu" class="feather-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projects Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Projects</h5>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Project Name</th>
+                                    <th>Status</th>
+                                    <th>Start Date</th>
+                                    <th>Completion</th>
+                                    <th>Building Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('project_detail', project_id=project.id) }}" class="text-decoration-none">
+                                            {{ project.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if project.status.value == 'active' %}
+                                            <span class="badge bg-success">{{ project.status.value.title() }}</span>
+                                        {% elif project.status.value == 'completed' %}
+                                            <span class="badge bg-primary">{{ project.status.value.title() }}</span>
+                                        {% elif project.status.value == 'cancelled' %}
+                                            <span class="badge bg-danger">{{ project.status.value.title() }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ project.status.value.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ project.start_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ project.get_completion_percentage() }}%">
+                                                {{ "%.1f"|format(project.get_completion_percentage()) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ project.building_type or 'N/A' }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('project_detail', project_id=project.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i data-feather="eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('gantt_chart', project_id=project.id) }}" 
+                                               class="btn btn-sm btn-outline-success">
+                                                <i data-feather="bar-chart-2"></i>
+                                            </a>
+                                            <a href="{{ url_for('linear_schedule', project_id=project.id) }}" 
+                                               class="btn btn-sm btn-outline-info">
+                                                <i data-feather="trending-up"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i data-feather="folder" class="feather-xl text-muted mb-3"></i>
+                        <h4 class="text-muted">No Projects Found</h4>
+                        <p class="text-muted">Create your first construction project to get started.</p>
+                        <a href="{{ url_for('create_project') }}" class="btn btn-primary">
+                            <i data-feather="plus"></i>
+                            Create Project
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+{% if recent_activities %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Activity Updates</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for activity in recent_activities %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-1">{{ activity.name }}</h6>
+                                <p class="mb-1 text-muted">{{ activity.project.name }}</p>
+                                <small class="text-muted">{{ activity.activity_type.value.title() }} • {{ activity.progress }}% complete</small>
+                            </div>
+                            <small class="text-muted">{{ activity.updated_at.strftime('%m/%d/%Y') }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize feather icons
+    feather.replace();
+</script>
+{% endblock %}

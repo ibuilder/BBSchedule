@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Linear Schedule - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2">Linear Schedule</h1>
+                <p class="text-muted">{{ project.name }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-secondary">
+                    <i data-feather="arrow-left"></i>
+                    Back to Project
+                </a>
+                <a href="{{ url_for('gantt_chart', project_id=project.id) }}" class="btn btn-outline-success">
+                    <i data-feather="bar-chart-2"></i>
+                    Gantt Chart
+                </a>
+                <a href="{{ url_for('export_pdf', project_id=project.id) }}" class="btn btn-outline-danger">
+                    <i data-feather="file-text"></i>
+                    Export PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Linear Schedule Chart -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Linear Schedule - Time vs Location</h5>
+            </div>
+            <div class="card-body">
+                <div id="linear-chart-container" style="height: 500px;">
+                    <canvas id="linear-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Production Rate Analysis -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Production Rates</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>Rate</th>
+                                <th>Unit</th>
+                                <th>Crew Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            {% if activity.production_rate %}
+                            <tr>
+                                <td>{{ activity.name }}</td>
+                                <td>{{ activity.production_rate }}</td>
+                                <td>{{ activity.unit or 'units' }}/day</td>
+                                <td>{{ activity.resource_crew_size or 'N/A' }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Location Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>Start Location</th>
+                                <th>End Location</th>
+                                <th>Distance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            {% if activity.location_start is not none and activity.location_end is not none %}
+                            <tr>
+                                <td>{{ activity.name }}</td>
+                                <td>{{ activity.location_start }}</td>
+                                <td>{{ activity.location_end }}</td>
+                                <td>{{ activity.location_end - activity.location_start }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resource Utilization -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Resource Utilization Over Time</h5>
+            </div>
+            <div class="card-body">
+                <div id="resource-chart-container" style="height: 300px;">
+                    <canvas id="resource-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Linear Schedule Benefits -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Linear Scheduling Benefits</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i data-feather="trending-up" class="feather-lg text-success mb-2"></i>
+                            <h6>Continuous Workflow</h6>
+                            <p class="text-muted">Activities flow smoothly from one location to another</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i data-feather="users" class="feather-lg text-info mb-2"></i>
+                            <h6>Crew Efficiency</h6>
+                            <p class="text-muted">Optimized crew utilization and reduced idle time</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i data-feather="map" class="feather-lg text-warning mb-2"></i>
+                            <h6>Location Based</h6>
+                            <p class="text-muted">Clear visualization of work progression by location</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <i data-feather="clock" class="feather-lg text-danger mb-2"></i>
+                            <h6>Time Optimization</h6>
+                            <p class="text-muted">Reduced project duration through efficient sequencing</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/linear.js') }}"></script>
+<script>
+    // Initialize linear schedule with project data
+    const projectData = {
+        id: {{ project.id }},
+        name: "{{ project.name }}",
+        start_date: "{{ project.start_date.strftime('%Y-%m-%d') }}",
+        end_date: "{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else '' }}"
+    };
+    
+    // Load activities via API
+    fetch(`/api/project/${project.id}/activities`)
+        .then(response => response.json())
+        .then(data => {
+            initializeLinearSchedule(projectData, data.activities);
+            initializeResourceChart(projectData, data.activities);
+        })
+        .catch(error => {
+            console.error('Error loading project data:', error);
+        });
+    
+    feather.replace();
+</script>
+{% endblock %}

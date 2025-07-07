@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Gantt Chart - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2">Gantt Chart</h1>
+                <p class="text-muted">{{ project.name }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-secondary">
+                    <i data-feather="arrow-left"></i>
+                    Back to Project
+                </a>
+                <a href="{{ url_for('linear_schedule', project_id=project.id) }}" class="btn btn-outline-info">
+                    <i data-feather="trending-up"></i>
+                    Linear Schedule
+                </a>
+                <a href="{{ url_for('export_excel', project_id=project.id) }}" class="btn btn-outline-success">
+                    <i data-feather="download"></i>
+                    Export Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gantt Chart Container -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Project Schedule - Gantt View</h5>
+            </div>
+            <div class="card-body">
+                <div id="gantt-chart-container" style="height: 600px; overflow: auto;">
+                    <canvas id="gantt-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Details Table -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Activity Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Activity</th>
+                                <th>Type</th>
+                                <th>Duration</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Progress</th>
+                                <th>Predecessors</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <td>{{ activity.id }}</td>
+                                <td>{{ activity.name }}</td>
+                                <td>{{ activity.activity_type.value.title() }}</td>
+                                <td>{{ activity.duration }} days</td>
+                                <td>{{ activity.start_date.strftime('%Y-%m-%d') if activity.start_date else 'TBD' }}</td>
+                                <td>{{ activity.end_date.strftime('%Y-%m-%d') if activity.end_date else 'TBD' }}</td>
+                                <td>
+                                    <div class="progress" style="height: 15px;">
+                                        <div class="progress-bar" role="progressbar" style="width: {{ activity.progress }}%">
+                                            {{ activity.progress }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if activity.get_predecessor_ids() %}
+                                        {{ activity.get_predecessor_ids()|join(', ') }}
+                                    {% else %}
+                                        None
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Legend</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="me-2" style="width: 20px; height: 20px; background-color: #007bff;"></div>
+                            <span>Not Started</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="me-2" style="width: 20px; height: 20px; background-color: #ffc107;"></div>
+                            <span>In Progress</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="me-2" style="width: 20px; height: 20px; background-color: #28a745;"></div>
+                            <span>Completed</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="me-2" style="width: 20px; height: 20px; background-color: #dc3545;"></div>
+                            <span>Critical Path</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/gantt.js') }}"></script>
+<script>
+    // Initialize Gantt chart with project data
+    const projectData = {
+        id: {{ project.id }},
+        name: "{{ project.name }}",
+        start_date: "{{ project.start_date.strftime('%Y-%m-%d') }}",
+        end_date: "{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else '' }}"
+    };
+    
+    // Load activities via API
+    fetch(`/api/project/${project.id}/activities`)
+        .then(response => response.json())
+        .then(data => {
+            initializeGanttChart(projectData, data.activities, data.dependencies);
+        })
+        .catch(error => {
+            console.error('Error loading project data:', error);
+        });
+    
+    feather.replace();
+</script>
+{% endblock %}
