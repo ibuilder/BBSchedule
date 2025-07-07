@@ -69,6 +69,19 @@
                             Resources
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i data-feather="cpu" class="me-1"></i>
+                            AI Optimization
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="showAIForAllProjects()">
+                                <i data-feather="brain" class="me-1"></i> All Projects Analysis
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><small class="dropdown-header">Project-Specific AI</small></li>
+                        </ul>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('import_schedule') }}">
                             <i data-feather="upload" class="me-1"></i>
@@ -127,6 +140,7 @@
     </script>
     
     <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/ai_optimization.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

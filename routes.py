@@ -2,7 +2,7 @@
 Modularized routes with proper error handling and logging.
 """
 from flask import render_template, request, redirect, url_for, session, flash, jsonify, send_file
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import traceback
 
 from app import app
@@ -12,6 +12,7 @@ from forms import ProjectForm, ActivityForm, DependencyForm, ScheduleImportForm,
 from services.project_service import ProjectService
 from services.activity_service import ActivityService
 from services.analytics_service import AnalyticsService
+from services.ai_service import ai_service
 from logger import log_error, log_activity, log_performance
 import utils
 import import_utils
@@ -314,6 +315,102 @@ def upload_document(project_id):
         log_error(e, f"Document upload error for project {project_id}")
         flash('Error uploading document', 'error')
         return redirect(url_for('project_detail', project_id=project_id))
+
+@app.route('/project/<int:project_id>/ai_optimization')
+@login_required
+def ai_optimization(project_id):
+    """AI-powered schedule optimization page."""
+    try:
+        user_id = session.get('user_id')
+        project = ProjectService.get_project_by_id(project_id, user_id)
+        
+        if not project:
+            flash('Project not found', 'error')
+            return redirect(url_for('projects'))
+        
+        # Generate AI optimization scenarios
+        scenarios = ai_service.generate_schedule_scenarios(project_id, 5)
+        
+        # Get activity predictions
+        activity_predictions = ai_service.predict_activity_durations(project_id)
+        
+        # Assess project risks
+        risk_assessment = ai_service.assess_project_risks(project_id)
+        
+        # Resource optimization
+        resource_optimization = ai_service.optimize_resource_allocation(project_id)
+        
+        log_activity(user_id, f"Accessed AI optimization for project {project.name}")
+        
+        return render_template('ai_optimization.html',
+                             project=project,
+                             scenarios=scenarios,
+                             activity_predictions=activity_predictions,
+                             risk_assessment=risk_assessment,
+                             resource_optimization=resource_optimization)
+        
+    except Exception as e:
+        log_error(e, f"AI optimization error for project {project_id}")
+        flash('Error loading AI optimization', 'error')
+        return redirect(url_for('project_detail', project_id=project_id))
+
+@app.route('/project/<int:project_id>/completion_probability')
+@login_required
+def completion_probability(project_id):
+    """AI completion probability analysis."""
+    try:
+        user_id = session.get('user_id')
+        project = ProjectService.get_project_by_id(project_id, user_id)
+        
+        if not project:
+            flash('Project not found', 'error')
+            return redirect(url_for('projects'))
+        
+        # Use project end date as target, or add 30 days from now
+        target_date = project.end_date or datetime.now() + timedelta(days=30)
+        
+        # Get completion probability analysis
+        completion_analysis = ai_service.predict_completion_probability(project_id, target_date)
+        
+        log_activity(user_id, f"Analyzed completion probability for project {project.name}")
+        
+        return jsonify(completion_analysis)
+        
+    except Exception as e:
+        log_error(e, f"Completion probability error for project {project_id}")
+        return jsonify({'error': 'Failed to analyze completion probability'})
+
+@app.route('/api/project/<int:project_id>/ai_recommendations')
+@login_required
+def api_ai_recommendations(project_id):
+    """API endpoint for AI-powered project recommendations."""
+    try:
+        user_id = session.get('user_id')
+        
+        # Get AI-powered recommendations
+        risk_assessment = ai_service.assess_project_risks(project_id)
+        resource_optimization = ai_service.optimize_resource_allocation(project_id)
+        activity_predictions = ai_service.predict_activity_durations(project_id)
+        
+        recommendations = {
+            'risk_recommendations': risk_assessment.get('recommendations', []),
+            'resource_recommendations': [opt.get('reasoning', '') for opt in resource_optimization.get('crew_recommendations', [])],
+            'schedule_recommendations': [pred.risk_factors for pred in activity_predictions],
+            'priority_actions': [
+                'Review high-risk activities identified by AI',
+                'Implement suggested resource optimizations',
+                'Monitor weather-dependent activities closely',
+                'Update cost estimates for better accuracy'
+            ]
+        }
+        
+        log_activity(user_id, f"Retrieved AI recommendations for project {project_id}")
+        
+        return jsonify(recommendations)
+        
+    except Exception as e:
+        log_error(e, f"AI recommendations API error for project {project_id}")
+        return jsonify({'error': 'Failed to get AI recommendations'})
 
 @app.route('/gantt')
 @login_required
