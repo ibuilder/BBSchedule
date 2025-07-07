@@ -192,7 +192,7 @@
                                 <p class="mb-1 text-muted">{{ activity.project.name }}</p>
                                 <small class="text-muted">{{ activity.activity_type.value.title() }} • {{ activity.progress }}% complete</small>
                             </div>
-                            <small class="text-muted">{{ activity.updated_at.strftime('%m/%d/%Y') }}</small>
+                            <small class="text-muted">{{ (activity.updated_at or activity.created_at).strftime('%m/%d/%Y') if activity.updated_at or activity.created_at else 'N/A' }}</small>
                         </div>
                     </div>
                     {% endfor %}
