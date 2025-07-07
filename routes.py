@@ -239,6 +239,35 @@ def create_activity(project_id):
         flash('Error creating activity', 'error')
         return redirect(url_for('project_detail', project_id=project_id))
 
+@app.route('/activity/<int:activity_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_activity(activity_id):
+    """Edit an existing activity."""
+    try:
+        user_id = session.get('user_id')
+        activity = Activity.query.get_or_404(activity_id)
+        project = activity.project
+        
+        if request.method == 'POST':
+            form = ActivityForm(request.form, obj=activity, project=project)
+            if form.validate():
+                form.populate_obj(activity)
+                db.session.commit()
+                flash('Activity updated successfully', 'success')
+                log_activity(user_id, f"Updated activity {activity.name}")
+                return redirect(url_for('project_detail', project_id=activity.project_id))
+            else:
+                flash('Please correct the errors below', 'error')
+        else:
+            form = ActivityForm(obj=activity, project=project)
+        
+        return render_template('activity_create.html', form=form, project=project, activity=activity)
+        
+    except Exception as e:
+        log_error(e, f"Edit activity error for activity {activity_id}")
+        flash('Error editing activity', 'error')
+        return redirect(url_for('index'))
+
 @app.route('/gantt')
 @login_required
 def gantt_chart():
