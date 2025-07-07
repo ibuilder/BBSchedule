@@ -187,7 +187,7 @@
     };
     
     // Load activities via API
-    fetch(`/api/project/${project.id}/activities`)
+    fetch(`/api/project/${projectData.id}/activities`)
         .then(response => response.json())
         .then(data => {
             initializeLinearSchedule(projectData, data.activities);
