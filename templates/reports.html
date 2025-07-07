@@ -1,437 +1,253 @@
 {% extends "base.html" %}
 
-{% block title %}Reports - {{ project.name }}{% endblock %}
+{% block title %}Reports - BBSchedule{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h2">Project Reports</h1>
-                <p class="text-muted">{{ project.name }}</p>
-            </div>
-            <div class="btn-group">
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-secondary">
-                    <i data-feather="arrow-left"></i>
-                    Back to Project
-                </a>
-                <a href="{{ url_for('export_excel', project_id=project.id) }}" class="btn btn-outline-success">
-                    <i data-feather="download"></i>
-                    Export Excel
-                </a>
-                <a href="{{ url_for('export_pdf', project_id=project.id) }}" class="btn btn-outline-danger">
-                    <i data-feather="file-text"></i>
-                    Export PDF
-                </a>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i data-feather="file-text"></i> Project Reports</h2>
+                    <p class="text-muted">Generate comprehensive project reports and analytics</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="generateReport()">
+                        <i data-feather="play"></i> Generate Report
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportReports()">
+                        <i data-feather="download"></i> Export All
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Key Performance Indicators -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Total Activities</h5>
-                        <h2 class="mb-0">{{ metrics.total_activities }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i data-feather="list" class="feather-lg"></i>
-                    </div>
+    <!-- Report Options -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="settings"></i> Report Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="projectSelect" class="form-label">Project</label>
+                            <select class="form-select" id="projectSelect">
+                                <option value="">All Projects</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reportType" class="form-label">Report Type</label>
+                            <select class="form-select" id="reportType">
+                                <option value="summary">Project Summary</option>
+                                <option value="detailed">Detailed Analysis</option>
+                                <option value="5d">5D Analysis Report</option>
+                                <option value="gantt">Gantt Chart Report</option>
+                                <option value="resource">Resource Utilization</option>
+                                <option value="financial">Financial Report</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateRange" class="form-label">Date Range</label>
+                            <select class="form-select" id="dateRange">
+                                <option value="all">All Time</option>
+                                <option value="week">Last Week</option>
+                                <option value="month">Last Month</option>
+                                <option value="quarter">Last Quarter</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="format" class="form-label">Output Format</label>
+                            <select class="form-select" id="format">
+                                <option value="pdf">PDF Report</option>
+                                <option value="excel">Excel Spreadsheet</option>
+                                <option value="json">JSON Data</option>
+                            </select>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="includeCharts" checked>
+                            <label class="form-check-label" for="includeCharts">
+                                Include Charts and Graphs
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="includeTimeline" checked>
+                            <label class="form-check-label" for="includeTimeline">
+                                Include Project Timeline
+                            </label>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Completed</h5>
-                        <h2 class="mb-0">{{ metrics.completed_activities }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i data-feather="check-circle" class="feather-lg"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-warning text-dark">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">In Progress</h5>
-                        <h2 class="mb-0">{{ metrics.in_progress_activities }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i data-feather="clock" class="feather-lg"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5 class="card-title">Not Started</h5>
-                        <h2 class="mb-0">{{ metrics.not_started_activities }}</h2>
-                    </div>
-                    <div class="align-self-center">
-                        <i data-feather="circle" class="feather-lg"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Performance Metrics -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Schedule Performance</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-6">
-                        <div class="text-center">
-                            <h3 class="text-primary">{{ metrics.completion_percentage }}%</h3>
-                            <p class="text-muted">Overall Completion</p>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-center">
-                            <h3 class="text-success">{{ metrics.schedule_performance_index }}</h3>
-                            <p class="text-muted">Schedule Performance Index</p>
-                        </div>
-                    </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="eye"></i> Report Preview</h5>
                 </div>
-                <div class="progress mt-3" style="height: 20px;">
-                    <div class="progress-bar" role="progressbar" style="width: {{ metrics.completion_percentage }}%">
-                        {{ metrics.completion_percentage }}%
+                <div class="card-body" id="reportPreview">
+                    <div class="text-center text-muted">
+                        <i data-feather="file-text" style="width: 64px; height: 64px;"></i>
+                        <p class="mt-2">Select report options and click "Generate Report" to preview</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Resource Utilization</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-6">
-                        <div class="text-center">
-                            <h3 class="text-info">{{ metrics.resource_utilization }}%</h3>
-                            <p class="text-muted">Resource Utilization</p>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-center">
-                            <h3 class="text-warning">{{ metrics.critical_path_length }}</h3>
-                            <p class="text-muted">Critical Path (days)</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="progress mt-3" style="height: 20px;">
-                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ metrics.resource_utilization }}%">
-                        {{ metrics.resource_utilization }}%
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Cost Analysis -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Cost Analysis</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <h4 class="text-primary">${{ "{:,.0f}".format(metrics.planned_value) }}</h4>
-                            <p class="text-muted">Planned Value (PV)</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <h4 class="text-success">${{ "{:,.0f}".format(metrics.earned_value) }}</h4>
-                            <p class="text-muted">Earned Value (EV)</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <h4 class="text-warning">${{ "{:,.0f}".format(metrics.actual_cost) }}</h4>
-                            <p class="text-muted">Actual Cost (AC)</p>
-                        </div>
-                    </div>
+    <!-- Recent Reports -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="clock"></i> Recent Reports</h5>
                 </div>
-                
-                <div class="mt-4">
-                    <canvas id="cost-chart" height="100"></canvas>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Report Name</th>
+                                    <th>Type</th>
+                                    <th>Project</th>
+                                    <th>Generated</th>
+                                    <th>Format</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTable">
+                                <tr>
+                                    <td>Monthly Progress Report</td>
+                                    <td>Summary</td>
+                                    <td>All Projects</td>
+                                    <td>2025-07-07 10:30 AM</td>
+                                    <td>PDF</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="download"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i data-feather="eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Highway Extension 5D Analysis</td>
+                                    <td>5D Analysis</td>
+                                    <td>Highway 101 Extension</td>
+                                    <td>2025-07-06 3:15 PM</td>
+                                    <td>Excel</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="download"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i data-feather="eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Activity Type Breakdown -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Activity Type Breakdown</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="activity-type-chart"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Progress Timeline</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="progress-timeline-chart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quality Metrics -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Schedule Quality Assessment</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <div class="mb-2">
-                                <div class="badge bg-success fs-6">Excellent</div>
-                            </div>
-                            <p class="text-muted">Activity Definition</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <div class="mb-2">
-                                <div class="badge bg-warning fs-6">Good</div>
-                            </div>
-                            <p class="text-muted">Logic Relationships</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <div class="mb-2">
-                                <div class="badge bg-success fs-6">Excellent</div>
-                            </div>
-                            <p class="text-muted">Resource Assignment</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center">
-                            <div class="mb-2">
-                                <div class="badge bg-info fs-6">Very Good</div>
-                            </div>
-                            <p class="text-muted">Duration Estimates</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-4">
-                    <h6>AI Recommendations</h6>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <i data-feather="check-circle" class="text-success me-2"></i>
-                            Schedule structure is well-defined with clear activity breakdown
-                        </li>
-                        <li class="mb-2">
-                            <i data-feather="alert-triangle" class="text-warning me-2"></i>
-                            Consider adding more dependency relationships for better logic flow
-                        </li>
-                        <li class="mb-2">
-                            <i data-feather="info" class="text-info me-2"></i>
-                            Resource loading appears balanced across project timeline
-                        </li>
-                        <li class="mb-2">
-                            <i data-feather="trending-up" class="text-success me-2"></i>
-                            Production rates are consistent with industry standards
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Historical Comparison -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Historical Performance Trends</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="historical-chart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
 <script>
-    // Cost Analysis Chart
-    const costCtx = document.getElementById('cost-chart').getContext('2d');
-    new Chart(costCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Planned Value', 'Earned Value', 'Actual Cost'],
-            datasets: [{
-                data: [{{ metrics.planned_value }}, {{ metrics.earned_value }}, {{ metrics.actual_cost }}],
-                backgroundColor: ['#007bff', '#28a745', '#ffc107']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        }
-    });
+function generateReport() {
+    const form = document.getElementById('reportForm');
+    const formData = new FormData(form);
     
-    // Activity Type Chart
-    const activityTypeCtx = document.getElementById('activity-type-chart').getContext('2d');
-    const activityTypes = {};
-    {% for activity in activities %}
-        activityTypes['{{ activity.activity_type.value }}'] = (activityTypes['{{ activity.activity_type.value }}'] || 0) + 1;
-    {% endfor %}
+    const reportConfig = {
+        project: document.getElementById('projectSelect').value,
+        type: document.getElementById('reportType').value,
+        dateRange: document.getElementById('dateRange').value,
+        format: document.getElementById('format').value,
+        includeCharts: document.getElementById('includeCharts').checked,
+        includeTimeline: document.getElementById('includeTimeline').checked
+    };
     
-    new Chart(activityTypeCtx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(activityTypes),
-            datasets: [{
-                data: Object.values(activityTypes),
-                backgroundColor: [
-                    '#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d',
-                    '#17a2b8', '#6f42c1', '#fd7e14', '#20c997', '#e83e8c'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+    // Show loading
+    const preview = document.getElementById('reportPreview');
+    preview.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Generating report...</span>
+            </div>
+            <p class="mt-2">Generating ${reportConfig.type} report...</p>
+        </div>
+    `;
     
-    // Progress Timeline Chart
-    const progressTimelineCtx = document.getElementById('progress-timeline-chart').getContext('2d');
-    new Chart(progressTimelineCtx, {
-        type: 'line',
-        data: {
-            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'],
-            datasets: [{
-                label: 'Planned Progress',
-                data: [10, 25, 45, 70, 85],
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                fill: true
-            }, {
-                label: 'Actual Progress',
-                data: [8, 22, 48, 65, {{ metrics.completion_percentage }}],
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
+    // Simulate report generation
+    setTimeout(() => {
+        const projectName = reportConfig.project ? 
+            document.querySelector(`#projectSelect option[value="${reportConfig.project}"]`).textContent :
+            'All Projects';
+        
+        preview.innerHTML = `
+            <h5>Report Preview: ${reportConfig.type} Report</h5>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Project:</strong> ${projectName}</p>
+                    <p><strong>Date Range:</strong> ${reportConfig.dateRange}</p>
+                    <p><strong>Format:</strong> ${reportConfig.format.toUpperCase()}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Charts Included:</strong> ${reportConfig.includeCharts ? 'Yes' : 'No'}</p>
+                    <p><strong>Timeline Included:</strong> ${reportConfig.includeTimeline ? 'Yes' : 'No'}</p>
+                    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+            </div>
+            <div class="alert alert-success mt-3">
+                <i data-feather="check-circle"></i>
+                Report generated successfully! 
+                <button class="btn btn-success btn-sm ms-2" onclick="downloadReport()">
+                    <i data-feather="download"></i> Download
+                </button>
+            </div>
+        `;
+        
+        // Re-initialize feather icons
+        feather.replace();
+    }, 2000);
+}
+
+function downloadReport() {
+    // In a real implementation, this would trigger the actual download
+    showNotification('Report download started', 'success');
+}
+
+function exportReports() {
+    showNotification('Exporting all reports...', 'info');
+    // In a real implementation, this would export all reports
+}
+
+function showNotification(message, type) {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
     
-    // Historical Chart
-    const historicalCtx = document.getElementById('historical-chart').getContext('2d');
-    new Chart(historicalCtx, {
-        type: 'line',
-        data: {
-            labels: [
-                {% for metric in historical_metrics %}
-                '{{ metric.metric_date.strftime("%m/%d") }}',
-                {% endfor %}
-            ],
-            datasets: [{
-                label: 'Completion %',
-                data: [
-                    {% for metric in historical_metrics %}
-                    {{ metric.schedule_performance_index or 0 }},
-                    {% endfor %}
-                ],
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
     
-    feather.replace();
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
 </script>
 {% endblock %}

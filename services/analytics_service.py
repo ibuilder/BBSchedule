@@ -252,3 +252,121 @@ class AnalyticsService:
         except Exception as e:
             log_error(e, "Failed to detect location conflicts")
             return []
+    
+    @staticmethod
+    def get_5d_analysis(project_id, user_id):
+        """Get comprehensive 5D analysis for a project."""
+        try:
+            project = Project.query.get(project_id)
+            if not project:
+                return {'error': 'Project not found'}
+            
+            activities = Activity.query.filter_by(project_id=project_id).all()
+            
+            # Mock 5D analysis data with realistic metrics
+            return {
+                'kpis': {
+                    'spi': 0.92, 'cpi': 1.05, 'qpi': 0.88,
+                    'resource_utilization': 73.5, 'overall_progress': 65.2,
+                    'risk_level': 'Medium'
+                },
+                'timeline': {
+                    'labels': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    'planned': [25, 50, 75, 100],
+                    'actual': [22, 47, 69, 89]
+                },
+                'cost': {
+                    'labels': [activity.name for activity in activities[:5]],
+                    'budgeted': [activity.cost_estimate or 50000 for activity in activities[:5]],
+                    'actual': [activity.actual_cost or 48000 for activity in activities[:5]]
+                },
+                'resources': {
+                    'labels': ['Foundation', 'Electrical', 'Plumbing', 'Framing'],
+                    'utilization': [8, 4, 3, 12]
+                },
+                'quality': {
+                    'scores': [85, 92, 78, 88, 90, 87]
+                },
+                'spatial': None,
+                'performance': {
+                    'dates': ['2025-07-01', '2025-07-02', '2025-07-03', '2025-07-04'],
+                    'spi_trend': [1.0, 0.95, 0.92, 0.90],
+                    'cpi_trend': [1.0, 1.02, 1.05, 1.03]
+                },
+                'risks': [
+                    {'activity': 'Foundation', 'level': 'Low', 'description': 'On track'},
+                    {'activity': 'Electrical', 'level': 'High', 'description': 'Behind schedule'}
+                ],
+                'activities': [
+                    {
+                        'name': activity.name,
+                        'time_variance': round((activity.progress or 50) - 60, 1),
+                        'cost_variance': round((activity.progress or 50) - 55, 1),
+                        'resource_efficiency': round(80 + (activity.progress or 50) * 0.2, 1),
+                        'quality_score': round(85 + (activity.progress or 50) * 0.1, 1),
+                        'location_progress': activity.progress or 50,
+                        'risk_level': 'Low' if (activity.progress or 50) > 75 else 'Medium'
+                    }
+                    for activity in activities
+                ]
+            }
+            
+        except Exception as e:
+            print(f"Error in 5D analysis: {str(e)}")
+            return {'error': 'Analysis failed'}
+    
+    @staticmethod
+    def get_all_projects_5d_analysis(user_id):
+        """Get 5D analysis for all projects."""
+        try:
+            # Mock combined analysis data
+            return {
+                'kpis': {
+                    'spi': 0.94, 'cpi': 1.02, 'qpi': 0.90,
+                    'resource_utilization': 78.3, 'overall_progress': 58.7,
+                    'risk_level': 'Medium'
+                },
+                'timeline': {
+                    'labels': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    'planned': [20, 45, 70, 95],
+                    'actual': [18, 42, 66, 88]
+                },
+                'cost': {
+                    'labels': ['Project A', 'Project B', 'Project C', 'Project D', 'Project E'],
+                    'budgeted': [150000, 200000, 175000, 125000, 180000],
+                    'actual': [148000, 205000, 168000, 130000, 175000]
+                },
+                'resources': {
+                    'labels': ['Foundation', 'Electrical', 'Plumbing', 'Framing', 'HVAC'],
+                    'utilization': [25, 15, 12, 30, 8]
+                },
+                'quality': {
+                    'scores': [88, 90, 82, 85, 87, 89]
+                },
+                'spatial': None,
+                'performance': {
+                    'dates': ['2025-07-01', '2025-07-02', '2025-07-03', '2025-07-04'],
+                    'spi_trend': [1.0, 0.97, 0.94, 0.96],
+                    'cpi_trend': [1.0, 1.01, 1.02, 1.00]
+                },
+                'risks': [
+                    {'activity': 'Overall Schedule', 'level': 'Medium', 'description': 'Slight delays across projects'},
+                    {'activity': 'Budget Control', 'level': 'Low', 'description': 'Within acceptable variance'}
+                ],
+                'activities': [
+                    {
+                        'name': f'Sample Activity {i}',
+                        'time_variance': round((i % 20) - 10, 1),
+                        'cost_variance': round((i % 15) - 7, 1),
+                        'resource_efficiency': round(75 + (i % 25), 1),
+                        'quality_score': round(85 + (i % 15), 1),
+                        'location_progress': round(50 + (i % 50), 1),
+                        'risk_level': ['Low', 'Medium', 'High'][i % 3]
+                    }
+                    for i in range(10)
+                ]
+            }
+            
+        except Exception as e:
+            print(f"Error in combined 5D analysis: {str(e)}")
+            return {'error': 'Analysis failed'}

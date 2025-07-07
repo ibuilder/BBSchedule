@@ -520,6 +520,23 @@ def api_optimize_resources():
         log_error(e, "Resource optimization API error")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/reports')
+@login_required
+def reports():
+    """Reports generation dashboard."""
+    try:
+        user_id = session.get('user_id')
+        projects = ProjectService.get_all_projects(user_id)
+        
+        log_activity(user_id, "Accessed reports dashboard")
+        
+        return render_template('reports.html', projects=projects)
+        
+    except Exception as e:
+        log_error(e, "Reports view error")
+        flash('Error loading reports', 'error')
+        return redirect(url_for('index'))
+
 @app.route('/dependencies')
 @login_required
 def dependencies():

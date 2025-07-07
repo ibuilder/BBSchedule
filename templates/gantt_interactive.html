@@ -133,14 +133,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadGanttData();
 });
 
-let ganttChart;
+let ganttChartInstance;
 let ganttData = [];
 let criticalPath = [];
 
 async function initializeGanttChart() {
     const ctx = document.getElementById('ganttChart').getContext('2d');
     
-    ganttChart = new Chart(ctx, {
+    ganttChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             datasets: []
@@ -218,7 +218,7 @@ async function loadGanttData() {
 }
 
 function updateGanttChart() {
-    if (!ganttChart) return;
+    if (!ganttChartInstance) return;
     
     const showCritical = document.getElementById('showCriticalPath').checked;
     const showProgress = document.getElementById('showProgress').checked;
@@ -291,8 +291,8 @@ function updateGanttChart() {
         });
     }
     
-    ganttChart.data.datasets = datasets;
-    ganttChart.update();
+    ganttChartInstance.data.datasets = datasets;
+    ganttChartInstance.update();
 }
 
 function showActivityDetails(activity) {
@@ -326,9 +326,9 @@ function filterByProject() {
 function changeViewMode() {
     const viewMode = document.getElementById('viewMode').value;
     
-    if (ganttChart) {
-        ganttChart.options.scales.x.time.unit = viewMode.toLowerCase();
-        ganttChart.update();
+    if (ganttChartInstance) {
+        ganttChartInstance.options.scales.x.time.unit = viewMode.toLowerCase();
+        ganttChartInstance.update();
     }
 }
 
@@ -346,8 +346,8 @@ function refreshGantt() {
 }
 
 function exportGantt() {
-    if (ganttChart) {
-        const url = ganttChart.toBase64Image();
+    if (ganttChartInstance) {
+        const url = ganttChartInstance.toBase64Image();
         const link = document.createElement('a');
         link.download = 'gantt-chart.png';
         link.href = url;
