@@ -11,34 +11,46 @@ let linearData = null;
  * Initialize the linear schedule with project data
  */
 function initializeLinearSchedule(projectData, activities) {
-    linearData = activities.filter(activity => 
-        activity.location_start !== null && 
-        activity.location_end !== null
-    );
-    
-    if (linearData.length === 0) {
-        showNoLocationDataMessage();
-        return;
+    try {
+        linearData = activities.filter(activity => 
+            activity.location_start !== null && 
+            activity.location_end !== null
+        );
+        
+        if (linearData.length === 0) {
+            showNoLocationDataMessage();
+            return;
+        }
+        
+        createLinearChart(projectData);
+    } catch (error) {
+        console.error('Error initializing linear schedule:', error);
+        showLinearErrorMessage('Failed to initialize linear schedule');
     }
-    
-    createLinearChart(projectData);
 }
 
 /**
  * Create and render the linear schedule chart
  */
 function createLinearChart(projectData) {
-    const ctx = document.getElementById('linear-chart').getContext('2d');
-    
-    // Prepare data for Chart.js
-    const chartData = prepareLinearData(projectData);
-    
-    // Destroy existing chart if it exists
-    if (linearChart) {
-        linearChart.destroy();
-    }
-    
-    linearChart = new Chart(ctx, {
+    try {
+        const canvas = document.getElementById('linear-chart');
+        if (!canvas) {
+            console.error('Linear chart canvas not found');
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Prepare data for Chart.js
+        const chartData = prepareLinearData(projectData);
+        
+        // Destroy existing chart if it exists
+        if (linearChart) {
+            linearChart.destroy();
+        }
+        
+        linearChart = new Chart(ctx, {
         type: 'line',
         data: chartData,
         options: {
@@ -112,6 +124,11 @@ function createLinearChart(projectData) {
             }
         }
     });
+    
+    } catch (error) {
+        console.error('Error creating linear chart:', error);
+        showLinearErrorMessage('Failed to create chart visualization');
+    }
 }
 
 /**
@@ -357,6 +374,23 @@ function analyzeLocationConflicts() {
     }
     
     return conflicts;
+}
+
+/**
+ * Show error message for linear chart
+ */
+function showLinearErrorMessage(message) {
+    const container = document.getElementById('linear-chart-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i data-feather="alert-circle" class="feather-xl text-danger mb-3"></i>
+                <h4 class="text-danger">Chart Error</h4>
+                <p class="text-muted">${message}</p>
+            </div>
+        `;
+        feather.replace();
+    }
 }
 
 /**

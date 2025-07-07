@@ -11,34 +11,85 @@ let ganttDependencies = null;
  * Initialize the Gantt chart with project data
  */
 function initializeGanttChart(projectData, activities, dependencies) {
-    ganttData = activities;
-    ganttDependencies = dependencies;
-    
-    // Sort activities by start date
-    ganttData.sort((a, b) => {
-        const dateA = new Date(a.start_date || projectData.start_date);
-        const dateB = new Date(b.start_date || projectData.start_date);
-        return dateA - dateB;
-    });
-    
-    createGanttChart(projectData);
+    try {
+        ganttData = activities;
+        ganttDependencies = dependencies;
+        
+        if (!ganttData || ganttData.length === 0) {
+            showNoDataMessage();
+            return;
+        }
+        
+        // Sort activities by start date
+        ganttData.sort((a, b) => {
+            const dateA = new Date(a.start_date || projectData.start_date);
+            const dateB = new Date(b.start_date || projectData.start_date);
+            return dateA - dateB;
+        });
+        
+        createGanttChart(projectData);
+    } catch (error) {
+        console.error('Error initializing Gantt chart:', error);
+        showErrorMessage('Failed to initialize Gantt chart');
+    }
+}
+
+/**
+ * Show message when no data is available
+ */
+function showNoDataMessage() {
+    const container = document.getElementById('gantt-chart-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i data-feather="bar-chart-2" class="feather-xl text-muted mb-3"></i>
+                <h4 class="text-muted">No Activities Found</h4>
+                <p class="text-muted">Add activities to your project to see the Gantt chart.</p>
+            </div>
+        `;
+        feather.replace();
+    }
+}
+
+/**
+ * Show error message
+ */
+function showErrorMessage(message) {
+    const container = document.getElementById('gantt-chart-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i data-feather="alert-circle" class="feather-xl text-danger mb-3"></i>
+                <h4 class="text-danger">Chart Error</h4>
+                <p class="text-muted">${message}</p>
+            </div>
+        `;
+        feather.replace();
+    }
 }
 
 /**
  * Create and render the Gantt chart
  */
 function createGanttChart(projectData) {
-    const ctx = document.getElementById('gantt-chart').getContext('2d');
-    
-    // Prepare data for Chart.js
-    const chartData = prepareGanttData(projectData);
-    
-    // Destroy existing chart if it exists
-    if (ganttChart) {
-        ganttChart.destroy();
-    }
-    
-    ganttChart = new Chart(ctx, {
+    try {
+        const canvas = document.getElementById('gantt-chart');
+        if (!canvas) {
+            console.error('Gantt chart canvas not found');
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Prepare data for Chart.js
+        const chartData = prepareGanttData(projectData);
+        
+        // Destroy existing chart if it exists
+        if (ganttChart) {
+            ganttChart.destroy();
+        }
+        
+        ganttChart = new Chart(ctx, {
         type: 'bar',
         data: chartData,
         options: {
@@ -78,16 +129,10 @@ function createGanttChart(projectData) {
             },
             scales: {
                 x: {
-                    type: 'time',
-                    time: {
-                        unit: 'day',
-                        displayFormats: {
-                            day: 'MMM dd'
-                        }
-                    },
+                    type: 'linear',
                     title: {
                         display: true,
-                        text: 'Timeline'
+                        text: 'Timeline (Days)'
                     }
                 },
                 y: {
@@ -110,6 +155,11 @@ function createGanttChart(projectData) {
             }
         }
     });
+        
+    } catch (error) {
+        console.error('Error creating Gantt chart:', error);
+        showErrorMessage('Failed to create chart visualization');
+    }
 }
 
 /**

@@ -140,26 +140,116 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/gantt.js') }}"></script>
 <script>
-    // Initialize Gantt chart with project data
-    const projectData = {
-        id: {{ project.id }},
-        name: "{{ project.name }}",
-        start_date: "{{ project.start_date.strftime('%Y-%m-%d') }}",
-        end_date: "{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else '' }}"
-    };
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Chart.js to be fully loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not loaded');
+        document.getElementById('gantt-chart-container').innerHTML = `
+            <div class="text-center py-5">
+                <h4 class="text-muted">Chart library loading...</h4>
+                <p class="text-muted">Please refresh the page if this persists.</p>
+            </div>
+        `;
+        return;
+    }
     
-    // Load activities via API
-    fetch(`/api/project/${projectData.id}/activities`)
-        .then(response => response.json())
-        .then(data => {
-            initializeGanttChart(projectData, data.activities, data.dependencies);
-        })
-        .catch(error => {
-            console.error('Error loading project data:', error);
-        });
+    try {
+        // Initialize Gantt chart with project data
+        const projectData = {
+            id: {{ project.id }},
+            name: "{{ project.name }}",
+            start_date: "{{ project.start_date.strftime('%Y-%m-%d') }}",
+            end_date: "{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else '' }}"
+        };
+        
+        // Load activities via API
+        fetch(`/api/project/${projectData.id}/activities`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                createSimpleGanttChart(projectData, data.activities, data.dependencies);
+            })
+            .catch(error => {
+                console.error('Error loading project data:', error);
+                document.getElementById('gantt-chart-container').innerHTML = `
+                    <div class="text-center py-5">
+                        <h4 class="text-danger">Error Loading Data</h4>
+                        <p class="text-muted">Failed to load project activities. Please try refreshing the page.</p>
+                    </div>
+                `;
+            });
+    } catch (error) {
+        console.error('Script initialization error:', error);
+    }
     
     feather.replace();
+});
+
+function createSimpleGanttChart(projectData, activities, dependencies) {
+    const container = document.getElementById('gantt-chart-container');
+    
+    if (!activities || activities.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <h4 class="text-muted">No Activities Found</h4>
+                <p class="text-muted">Add activities to your project to see the Gantt chart.</p>
+                <a href="/project/${projectData.id}/activity/create" class="btn btn-primary">Add Activity</a>
+            </div>
+        `;
+        return;
+    }
+    
+    // Create a simple table-based Gantt view
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Activity</th>
+                        <th>Type</th>
+                        <th>Duration</th>
+                        <th>Start Date</th>
+                        <th>Progress</th>
+                        <th>Timeline</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    activities.forEach(activity => {
+        html += `
+            <tr>
+                <td><strong>${activity.name}</strong></td>
+                <td><span class="badge bg-secondary">${activity.activity_type}</span></td>
+                <td>${activity.duration} days</td>
+                <td>${activity.start_date || 'TBD'}</td>
+                <td>
+                    <div class="progress" style="width: 100px;">
+                        <div class="progress-bar" style="width: ${activity.progress}%">${activity.progress}%</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary" style="height: 20px; width: ${Math.max(activity.progress * 2, 10)}px; margin-right: 5px;"></div>
+                        <div class="bg-light border" style="height: 20px; width: ${Math.max((100 - activity.progress) * 2, 10)}px;"></div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
 </script>
 {% endblock %}
