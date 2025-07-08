@@ -1012,11 +1012,7 @@ def monitoring_alerts():
 def api_ai_recommendations_general():
     """Get AI recommendations for dashboard (general)."""
     try:
-        from services.ai_service import AIService
-        
-        # Get AI service
-        ai_service = AIService()
-        
+        # Generate AI recommendations without complex service imports
         # Get general recommendations across all projects
         recommendations = {
             'risk_recommendations': [
