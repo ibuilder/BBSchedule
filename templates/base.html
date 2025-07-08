@@ -134,9 +134,14 @@
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
+    <!-- Feather Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    
     <!-- Initialize Feather Icons -->
     <script>
-        feather.replace();
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
     </script>
     
     <!-- Custom JavaScript -->

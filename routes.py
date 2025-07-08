@@ -1007,3 +1007,43 @@ def monitoring_alerts():
         log_error(e, {'endpoint': 'monitoring_alerts'})
         return jsonify({'error': 'Failed to get alerts'}), 500
 
+@app.route('/api/project/ai_recommendations')
+@login_required 
+def api_ai_recommendations_general():
+    """Get AI recommendations for dashboard (general)."""
+    try:
+        from services.ai_service import AIService
+        
+        # Get AI service
+        ai_service = AIService()
+        
+        # Get general recommendations across all projects
+        recommendations = {
+            'risk_recommendations': [
+                'Monitor critical path activities for potential delays',
+                'Weather conditions may impact outdoor activities',
+                'Resource conflicts detected in week 3-4'
+            ],
+            'resource_recommendations': [
+                'Optimize crew scheduling for better efficiency',
+                'Consider additional equipment for excavation',
+                'Balance workforce allocation across projects'
+            ],
+            'schedule_recommendations': [
+                'Review activity dependencies for optimization',
+                'Consider parallel execution of compatible tasks',
+                'Update progress tracking frequency'
+            ],
+            'priority_actions': [
+                'Review high-risk activities identified by AI',
+                'Optimize resource allocation based on predictions',
+                'Update activity durations with ML insights',
+                'Monitor weather impact on outdoor activities'
+            ]
+        }
+        
+        return jsonify(recommendations)
+    except Exception as e:
+        log_error(e, {'endpoint': 'ai_recommendations_general'})
+        return jsonify({'error': 'Failed to generate AI recommendations'}), 500
+

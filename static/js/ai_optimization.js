@@ -11,6 +11,19 @@ class AIOptimizationManager {
     }
 
     /**
+     * Initialize Feather icons safely
+     */
+    initializeFeatherIcons() {
+        try {
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        } catch (error) {
+            console.warn('Feather icons not available:', error);
+        }
+    }
+
+    /**
      * Initialize AI optimization features
      */
     init() {
@@ -131,7 +144,7 @@ class AIOptimizationManager {
         let html = `
             <div class="card">
                 <div class="card-header">
-                    <h5><i data-feather="brain"></i> AI Recommendations</h5>
+                    <h5><i data-feather="cpu"></i> AI Recommendations</h5>
                 </div>
                 <div class="card-body">
         `;
@@ -181,10 +194,8 @@ class AIOptimizationManager {
 
         container.innerHTML = html;
         
-        // Re-initialize feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
+        // Re-initialize feather icons safely
+        this.initializeFeatherIcons();
     }
 
     /**
@@ -219,10 +230,8 @@ class AIOptimizationManager {
             button.innerHTML = originalText;
             button.disabled = false;
             
-            // Re-initialize feather icons
-            if (typeof feather !== 'undefined') {
-                feather.replace();
-            }
+            // Re-initialize feather icons safely
+            this.initializeFeatherIcons();
         }
     }
 
