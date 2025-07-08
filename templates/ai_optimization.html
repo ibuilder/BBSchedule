@@ -94,7 +94,7 @@
                                         <span class="badge bg-primary">{{ scenario.modifications.strategy.replace('_', ' ').title() }}</span>
                                     </td>
                                     <td>{{ scenario.total_duration }} days</td>
-                                    <td>${{ "{:,.0f}"|format(scenario.total_cost) }}</td>
+                                    <td>${{ "%.0f"|format(scenario.total_cost|float) }}</td>
                                     <td>
                                         <span class="badge {% if scenario.risk_score < 30 %}bg-success{% elif scenario.risk_score < 60 %}bg-warning{% else %}bg-danger{% endif %}">
                                             {{ "%.1f"|format(scenario.risk_score) }}%
