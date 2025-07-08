@@ -142,20 +142,22 @@ function prepareLinearData(projectData) {
     ];
     
     linearData.forEach((activity, index) => {
-        const startDate = new Date(activity.start_date || projectData.start_date);
+        // Use current date as fallback for activities without dates
+        const now = new Date();
+        const startDate = activity.start_date ? new Date(activity.start_date) : now;
         const endDate = activity.end_date ? 
             new Date(activity.end_date) : 
-            new Date(startDate.getTime() + activity.duration * 24 * 60 * 60 * 1000);
+            new Date(now.getTime() + (activity.duration || 1) * 24 * 60 * 60 * 1000);
         
         // Create data points for the activity line
         const dataPoints = [
             {
                 x: startDate,
-                y: activity.location_start
+                y: activity.start_location || 0
             },
             {
                 x: endDate,
-                y: activity.location_end
+                y: activity.end_location || 0
             }
         ];
         

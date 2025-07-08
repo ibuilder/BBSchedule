@@ -198,7 +198,7 @@ function loadProjectLinearSchedule() {
             
             // Initialize linear schedule chart with enhanced data structure
             if (data.data && data.data.activities) {
-                initializeLinearChart(data.data.project, data.data.activities, data.data.timeline);
+                initializeLinearSchedule(data.data.project, data.data.activities);
             } else {
                 showNoDataMessage();
             }

@@ -1083,6 +1083,7 @@ def apply_ai_scenario(project_id):
         activities = Activity.query.filter_by(project_id=project_id).all()
         optimization_applied = False
         
+        import random
         for activity in activities:
             # Simulate optimization improvements (5-15% duration reduction)
             if random.random() < 0.7:  # Apply to 70% of activities
