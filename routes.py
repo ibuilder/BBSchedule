@@ -1992,3 +1992,86 @@ def api_add_sample_activities(project_id):
             'success': False,
             'error': 'Failed to add sample activities'
         }), 500
+
+@app.route('/api/projects/<int:project_id>/linear_schedule')
+@login_required
+def api_project_linear_schedule_alt(project_id):
+    """Alternative linear schedule API endpoint for backward compatibility"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        activities = Activity.query.filter_by(project_id=project_id).all()
+        
+        # Prepare linear schedule data optimized for location-based activities
+        linear_data = {
+            'project': {
+                'id': project.id,
+                'name': project.name,
+                'start_station': project.project_start_station or 0,
+                'end_station': project.project_end_station or 100,
+                'station_units': project.station_units or 'm',
+                'linear_scheduling_enabled': project.linear_scheduling_enabled
+            },
+            'activities': [],
+            'timeline': []
+        }
+        
+        # Process activities for linear schedule visualization
+        for activity in activities:
+            activity_data = {
+                'id': activity.id,
+                'name': activity.name,
+                'start_date': activity.start_date.isoformat() if activity.start_date else None,
+                'end_date': activity.end_date.isoformat() if activity.end_date else None,
+                'duration': activity.duration,
+                'progress': activity.progress or 0,
+                'location_start': activity.location_start or 0,
+                'location_end': activity.location_end or 100,
+                'activity_type': activity.activity_type.value if activity.activity_type else 'other',
+                'production_rate': activity.production_rate or 0,
+                'resource_crew_size': activity.resource_crew_size or 1
+            }
+            
+            # Calculate linear schedule points for visualization
+            if activity.start_date and activity.end_date and activity.location_start is not None and activity.location_end is not None:
+                timeline_entry = {
+                    'activity_id': activity.id,
+                    'activity_name': activity.name,
+                    'start_location': activity.location_start,
+                    'end_location': activity.location_end,
+                    'start_time': activity.start_date.isoformat(),
+                    'end_time': activity.end_date.isoformat(),
+                    'progress_percent': activity.progress or 0,
+                    'status': 'completed' if activity.progress == 100 else 'in_progress' if activity.progress > 0 else 'not_started'
+                }
+                linear_data['timeline'].append(timeline_entry)
+            
+            linear_data['activities'].append(activity_data)
+        
+        # Sort timeline by start location for better visualization
+        linear_data['timeline'].sort(key=lambda x: x['start_location'])
+        
+        log_activity(user_id, f"Retrieved linear schedule for project {project.name}", {
+            'project_id': project_id, 
+            'activity_count': len(linear_data['activities']),
+            'timeline_entries': len(linear_data['timeline'])
+        })
+        
+        return jsonify({
+            'success': True,
+            'data': linear_data,
+            'metadata': {
+                'total_activities': len(linear_data['activities']),
+                'timeline_activities': len(linear_data['timeline']),
+                'project_length': (project.project_end_station or 100) - (project.project_start_station or 0),
+                'units': project.station_units or 'm'
+            }
+        })
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'api_project_linear_schedule_alt', 'project_id': project_id})
+        return jsonify({
+            'success': False,
+            'error': 'Failed to load linear schedule data',
+            'details': str(e)
+        }), 500
