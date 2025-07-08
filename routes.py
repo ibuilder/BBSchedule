@@ -1255,3 +1255,246 @@ def save_offline_action():
     except Exception as e:
         log_error(e, {'endpoint': 'save_offline_action'})
         return jsonify({'error': 'Failed to save offline action'}), 500
+
+# Advanced Analytics and Weather Integration
+@app.route('/api/project/<int:project_id>/weather_forecast')
+@login_required
+def get_weather_forecast(project_id):
+    """Get weather forecast for project location"""
+    try:
+        from services.weather_service import weather_service
+        
+        days = request.args.get('days', 14, type=int)
+        forecast = weather_service.get_weather_forecast(project_id, days)
+        
+        return jsonify(forecast)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'weather_forecast', 'project_id': project_id})
+        return jsonify({'error': 'Failed to get weather forecast'}), 500
+
+@app.route('/api/project/<int:project_id>/weather_optimization')
+@login_required
+def get_weather_optimization(project_id):
+    """Get weather-based schedule optimization"""
+    try:
+        from services.weather_service import weather_service
+        
+        optimization = weather_service.optimize_schedule_for_weather(project_id)
+        
+        return jsonify(optimization)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'weather_optimization', 'project_id': project_id})
+        return jsonify({'error': 'Failed to optimize for weather'}), 500
+
+# Enhanced Collaboration
+@app.route('/api/project/<int:project_id>/collaboration/start_session', methods=['POST'])
+@login_required
+def start_collaboration_session(project_id):
+    """Start collaborative editing session"""
+    try:
+        from services.collaboration_service import collaboration_service
+        
+        user_id = session.get('user_id', 'anonymous')
+        session_data = collaboration_service.start_collaborative_session(project_id, user_id)
+        
+        return jsonify(session_data)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'start_collaboration', 'project_id': project_id})
+        return jsonify({'error': 'Failed to start collaboration session'}), 500
+
+@app.route('/api/project/<int:project_id>/collaboration/analytics')
+@login_required
+def get_collaboration_analytics(project_id):
+    """Get team collaboration analytics"""
+    try:
+        from services.collaboration_service import collaboration_service
+        
+        analytics = collaboration_service.get_team_communication_analytics(project_id)
+        
+        return jsonify(analytics)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'collaboration_analytics', 'project_id': project_id})
+        return jsonify({'error': 'Failed to get collaboration analytics'}), 500
+
+# IoT & Field Integration
+@app.route('/api/project/<int:project_id>/iot/equipment', methods=['POST'])
+@login_required
+def register_iot_equipment(project_id):
+    """Register IoT equipment for monitoring"""
+    try:
+        from services.iot_field_service import iot_field_service
+        
+        equipment_data = request.get_json()
+        registration = iot_field_service.register_equipment(project_id, equipment_data)
+        
+        return jsonify(registration)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'register_iot_equipment', 'project_id': project_id})
+        return jsonify({'error': 'Failed to register equipment'}), 500
+
+@app.route('/api/project/<int:project_id>/drone/mission', methods=['POST'])
+@login_required
+def create_drone_mission(project_id):
+    """Create drone survey mission"""
+    try:
+        from services.iot_field_service import iot_field_service
+        
+        mission_data = request.get_json()
+        mission = iot_field_service.create_drone_mission(project_id, mission_data)
+        
+        return jsonify(mission)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'create_drone_mission', 'project_id': project_id})
+        return jsonify({'error': 'Failed to create drone mission'}), 500
+
+@app.route('/api/project/<int:project_id>/field_monitoring')
+@login_required
+def get_field_monitoring_dashboard(project_id):
+    """Get field monitoring dashboard"""
+    try:
+        from services.iot_field_service import iot_field_service
+        
+        dashboard = iot_field_service.get_field_monitoring_dashboard(project_id)
+        
+        return jsonify(dashboard)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'field_monitoring', 'project_id': project_id})
+        return jsonify({'error': 'Failed to get field monitoring data'}), 500
+
+@app.route('/api/qr/<qr_id>/scan', methods=['POST'])
+@login_required
+def scan_qr_code(qr_id):
+    """Process QR code scan"""
+    try:
+        from services.iot_field_service import iot_field_service
+        
+        scanner_data = request.get_json()
+        scan_result = iot_field_service.scan_qr_code(qr_id, scanner_data)
+        
+        return jsonify(scan_result)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'scan_qr_code', 'qr_id': qr_id})
+        return jsonify({'error': 'Failed to process QR scan'}), 500
+
+# Advanced Reporting
+@app.route('/api/reports/executive_dashboard')
+@login_required
+def get_executive_dashboard():
+    """Get executive dashboard report"""
+    try:
+        from services.advanced_reporting_service import advanced_reporting_service
+        
+        date_range = {
+            'start_date': request.args.get('start_date', (datetime.now() - timedelta(days=30)).isoformat()),
+            'end_date': request.args.get('end_date', datetime.now().isoformat())
+        }
+        
+        filters = {}
+        if request.args.get('project_ids'):
+            filters['project_ids'] = [int(x) for x in request.args.get('project_ids').split(',')]
+        
+        dashboard = advanced_reporting_service.generate_executive_dashboard(date_range, filters)
+        
+        return jsonify(dashboard)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'executive_dashboard'})
+        return jsonify({'error': 'Failed to generate executive dashboard'}), 500
+
+@app.route('/api/reports/custom', methods=['POST'])
+@login_required
+def create_custom_report():
+    """Create custom report"""
+    try:
+        from services.advanced_reporting_service import advanced_reporting_service
+        
+        report_config = request.get_json()
+        report_config['created_by'] = session.get('user_id', 'anonymous')
+        
+        custom_report = advanced_reporting_service.create_custom_report(report_config)
+        
+        return jsonify(custom_report)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'create_custom_report'})
+        return jsonify({'error': 'Failed to create custom report'}), 500
+
+@app.route('/api/reports/export_bi', methods=['POST'])
+@login_required
+def export_business_intelligence():
+    """Export data for business intelligence tools"""
+    try:
+        from services.advanced_reporting_service import advanced_reporting_service
+        
+        export_config = request.get_json()
+        export_data = advanced_reporting_service.export_to_business_intelligence(export_config)
+        
+        return jsonify(export_data)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'export_bi'})
+        return jsonify({'error': 'Failed to export BI data'}), 500
+
+@app.route('/api/reports/pdf', methods=['POST'])
+@login_required
+def generate_pdf_report():
+    """Generate PDF report"""
+    try:
+        from services.advanced_reporting_service import advanced_reporting_service
+        
+        report_data = request.get_json()
+        template_style = request.args.get('style', 'professional')
+        
+        pdf_result = advanced_reporting_service.generate_pdf_report(report_data, template_style)
+        
+        return jsonify(pdf_result)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'generate_pdf'})
+        return jsonify({'error': 'Failed to generate PDF report'}), 500
+
+# Executive Dashboard Page
+@app.route('/executive_dashboard')
+@login_required
+def executive_dashboard_page():
+    """Executive dashboard page"""
+    try:
+        log_activity(
+            session.get('user_id'),
+            "Accessed executive dashboard",
+            {}
+        )
+        
+        return render_template('executive_dashboard.html')
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'executive_dashboard_page'})
+        return render_template('error.html', message="Failed to load executive dashboard"), 500
+
+# Field Monitoring Page
+@app.route('/project/<int:project_id>/field_monitoring')
+@login_required
+def project_field_monitoring(project_id):
+    """Project field monitoring page"""
+    try:
+        project = Project.query.get_or_404(project_id)
+        
+        log_activity(
+            session.get('user_id'),
+            f"Viewed field monitoring for project {project.name}",
+            {'project_id': project_id}
+        )
+        
+        return render_template('field_monitoring.html', project=project)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'field_monitoring_page', 'project_id': project_id})
+        return render_template('error.html', message="Failed to load field monitoring"), 500

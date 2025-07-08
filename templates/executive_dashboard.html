@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Dashboard - BBSchedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i data-feather="bar-chart-2"></i> Executive Dashboard</h1>
+                    <p class="text-muted">Comprehensive portfolio overview and performance metrics</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="refreshDashboard()">
+                        <i data-feather="refresh-cw"></i> Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="exportReport()">
+                        <i data-feather="download"></i> Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Executive Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0" id="total-projects">-</h3>
+                            <p class="mb-0">Total Projects</p>
+                        </div>
+                        <i data-feather="folder" class="text-white-50" style="width: 48px; height: 48px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0" id="completion-rate">-%</h3>
+                            <p class="mb-0">Avg Completion</p>
+                        </div>
+                        <i data-feather="check-circle" class="text-white-50" style="width: 48px; height: 48px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0" id="total-budget">$-</h3>
+                            <p class="mb-0">Portfolio Value</p>
+                        </div>
+                        <i data-feather="dollar-sign" class="text-white-50" style="width: 48px; height: 48px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0" id="performance-index">-</h3>
+                            <p class="mb-0">Performance Index</p>
+                        </div>
+                        <i data-feather="trending-up" class="text-white-50" style="width: 48px; height: 48px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Portfolio Performance Chart -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i data-feather="line-chart"></i> Portfolio Performance Trends</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="portfolioChart" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i data-feather="target"></i> Key Performance Indicators</h5>
+                </div>
+                <div class="card-body">
+                    <div id="kpi-metrics">
+                        <div class="d-flex justify-content-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading KPIs...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Project Portfolio Overview -->
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i data-feather="grid"></i> Project Portfolio</h5>
+                </div>
+                <div class="card-body">
+                    <div id="portfolio-overview">
+                        <div class="d-flex justify-content-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading portfolio...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i data-feather="shield"></i> Risk Assessment</h5>
+                </div>
+                <div class="card-body">
+                    <div id="risk-assessment">
+                        <div class="d-flex justify-content-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading risk data...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Overview -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i data-feather="pie-chart"></i> Financial Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <canvas id="financialChart" height="300"></canvas>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="financial-metrics">
+                                <div class="d-flex justify-content-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading financial data...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Executive Recommendations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="lightbulb"></i> Executive Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    <div id="recommendations">
+                        <div class="d-flex justify-content-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading recommendations...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let portfolioChart = null;
+let financialChart = null;
+let dashboardData = null;
+
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadExecutiveDashboard();
+});
+
+function loadExecutiveDashboard() {
+    const endDate = new Date().toISOString();
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days ago
+    
+    fetch(`/api/reports/executive_dashboard?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            dashboardData = data;
+            updateDashboardCards(data);
+            updatePortfolioChart(data);
+            updateFinancialChart(data);
+            updateKPIMetrics(data);
+            updatePortfolioOverview(data);
+            updateRiskAssessment(data);
+            updateFinancialMetrics(data);
+            updateRecommendations(data);
+        })
+        .catch(error => {
+            console.error('Error loading dashboard:', error);
+            showError('Failed to load executive dashboard data');
+        });
+}
+
+function updateDashboardCards(data) {
+    const summary = data.executive_summary || {};
+    const keyMetrics = summary.key_metrics || {};
+    
+    document.getElementById('total-projects').textContent = keyMetrics.total_projects || 0;
+    document.getElementById('completion-rate').textContent = (keyMetrics.completion_rate || 0).toFixed(1) + '%';
+    document.getElementById('total-budget').textContent = '$' + (keyMetrics.total_budget || 0).toLocaleString();
+    
+    const performanceMetrics = data.performance_metrics || {};
+    const spi = performanceMetrics.schedule_performance_index?.value || 1.0;
+    document.getElementById('performance-index').textContent = spi.toFixed(2);
+}
+
+function updatePortfolioChart(data) {
+    const ctx = document.getElementById('portfolioChart').getContext('2d');
+    
+    if (portfolioChart) {
+        portfolioChart.destroy();
+    }
+    
+    portfolioChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [
+                {
+                    label: 'Schedule Performance',
+                    data: [1.02, 1.04, 1.05, 1.05],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Cost Performance',
+                    data: [1.01, 1.02, 1.03, 1.03],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Quality Score',
+                    data: [0.92, 0.94, 0.95, 0.945],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Performance Trends Over Time'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 0.8,
+                    max: 1.1
+                }
+            }
+        }
+    });
+}
+
+function updateFinancialChart(data) {
+    const ctx = document.getElementById('financialChart').getContext('2d');
+    
+    if (financialChart) {
+        financialChart.destroy();
+    }
+    
+    const financial = data.financial_overview || {};
+    const budgetSummary = financial.budget_summary || {};
+    
+    financialChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Actual Costs', 'Committed', 'Remaining Budget'],
+            datasets: [{
+                data: [
+                    budgetSummary.actual_costs || 0,
+                    (budgetSummary.committed_costs || 0) - (budgetSummary.actual_costs || 0),
+                    budgetSummary.remaining_budget || 0
+                ],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#4BC0C0'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function updateKPIMetrics(data) {
+    const performanceMetrics = data.performance_metrics || {};
+    const container = document.getElementById('kpi-metrics');
+    
+    let html = '';
+    
+    for (const [metricName, metricData] of Object.entries(performanceMetrics)) {
+        const statusClass = metricData.status === 'excellent' ? 'success' : 
+                           metricData.status === 'good' ? 'info' : 
+                           metricData.status === 'needs_improvement' ? 'warning' : 'primary';
+        
+        html += `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted">${metricName.replace(/_/g, ' ').toUpperCase()}</small>
+                    <span class="badge bg-${statusClass}">${metricData.status || 'Unknown'}</span>
+                </div>
+                <div class="h5 mb-1">${metricData.value || 'N/A'}</div>
+                <div class="progress mb-1" style="height: 6px;">
+                    <div class="progress-bar bg-${statusClass}" 
+                         style="width: ${Math.min(100, (metricData.value / metricData.target) * 100 || 0)}%"></div>
+                </div>
+                <small class="text-muted">Target: ${metricData.target || 'N/A'}</small>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+function updatePortfolioOverview(data) {
+    const portfolio = data.project_portfolio || {};
+    const projects = portfolio.projects || [];
+    const container = document.getElementById('portfolio-overview');
+    
+    let html = '';
+    
+    projects.slice(0, 5).forEach(project => {
+        const progressClass = project.progress >= 80 ? 'success' : 
+                             project.progress >= 50 ? 'info' : 
+                             project.progress >= 20 ? 'warning' : 'danger';
+        
+        html += `
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0">${project.name}</h6>
+                    <span class="badge bg-${progressClass}">${project.progress.toFixed(1)}%</span>
+                </div>
+                <div class="progress mb-1" style="height: 8px;">
+                    <div class="progress-bar bg-${progressClass}" 
+                         style="width: ${project.progress}%"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">${project.status}</small>
+                    <small class="text-muted">$${(project.budget || 0).toLocaleString()}</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    if (projects.length > 5) {
+        html += `<div class="text-center"><small class="text-muted">...and ${projects.length - 5} more projects</small></div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function updateRiskAssessment(data) {
+    const riskData = data.risk_dashboard || {};
+    const container = document.getElementById('risk-assessment');
+    
+    const overallRisk = riskData.overall_risk_score || 0;
+    const riskLevel = overallRisk < 30 ? 'Low' : overallRisk < 60 ? 'Medium' : 'High';
+    const riskClass = overallRisk < 30 ? 'success' : overallRisk < 60 ? 'warning' : 'danger';
+    
+    let html = `
+        <div class="text-center mb-4">
+            <h3 class="text-${riskClass}">${riskLevel} Risk</h3>
+            <div class="progress mb-2" style="height: 20px;">
+                <div class="progress-bar bg-${riskClass}" 
+                     style="width: ${overallRisk}%">${overallRisk}/100</div>
+            </div>
+        </div>
+    `;
+    
+    const topRisks = riskData.top_risks || [];
+    if (topRisks.length > 0) {
+        html += '<h6>Top Risks:</h6>';
+        topRisks.slice(0, 3).forEach(risk => {
+            const priorityClass = risk.probability === 'high' ? 'danger' : 
+                                 risk.probability === 'medium' ? 'warning' : 'info';
+            
+            html += `
+                <div class="mb-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-${priorityClass} me-2">${risk.probability}</span>
+                        <small>${risk.risk}</small>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+function updateFinancialMetrics(data) {
+    const financial = data.financial_overview || {};
+    const budgetSummary = financial.budget_summary || {};
+    const performance = financial.cost_performance || {};
+    const container = document.getElementById('financial-metrics');
+    
+    const html = `
+        <div class="row text-center">
+            <div class="col-12 mb-3">
+                <h6>Budget Utilization</h6>
+                <div class="progress mb-2">
+                    <div class="progress-bar" 
+                         style="width: ${(budgetSummary.actual_costs / budgetSummary.total_budget) * 100}%"></div>
+                </div>
+                <small>${((budgetSummary.actual_costs / budgetSummary.total_budget) * 100).toFixed(1)}% Used</small>
+            </div>
+            <div class="col-6">
+                <div class="border rounded p-2">
+                    <h6 class="mb-0">${performance.cost_performance_index || 'N/A'}</h6>
+                    <small class="text-muted">CPI</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="border rounded p-2">
+                    <h6 class="mb-0">${performance.cost_variance_percentage || 0}%</h6>
+                    <small class="text-muted">Variance</small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function updateRecommendations(data) {
+    const recommendations = data.recommendations || [];
+    const container = document.getElementById('recommendations');
+    
+    let html = '';
+    
+    if (recommendations.length === 0) {
+        html = '<p class="text-muted">No specific recommendations at this time. Portfolio is performing well.</p>';
+    } else {
+        recommendations.forEach(rec => {
+            const priorityClass = rec.priority === 'high' ? 'danger' : 
+                                 rec.priority === 'medium' ? 'warning' : 'info';
+            
+            html += `
+                <div class="alert alert-${priorityClass === 'danger' ? 'danger' : priorityClass === 'warning' ? 'warning' : 'info'}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="alert-heading mb-1">${rec.category.toUpperCase()}: ${rec.recommendation}</h6>
+                            <p class="mb-1">${rec.impact}</p>
+                            <small>Timeline: ${rec.timeline} | Effort: ${rec.effort}</small>
+                        </div>
+                        <span class="badge bg-${priorityClass}">${rec.priority}</span>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+function refreshDashboard() {
+    // Show loading states
+    document.querySelectorAll('.spinner-border').forEach(spinner => {
+        spinner.parentElement.innerHTML = '<div class="d-flex justify-content-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    });
+    
+    loadExecutiveDashboard();
+    showSuccess('Dashboard refreshed successfully');
+}
+
+function exportReport() {
+    if (!dashboardData) {
+        showError('No data available to export');
+        return;
+    }
+    
+    const reportData = {
+        title: 'Executive Dashboard Report',
+        generated_at: new Date().toISOString(),
+        ...dashboardData
+    };
+    
+    fetch('/api/reports/pdf', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.pdf_generated) {
+            // Create download link
+            const link = document.createElement('a');
+            link.href = 'data:application/pdf;base64,' + data.content;
+            link.download = data.filename;
+            link.click();
+            
+            showSuccess('Report exported successfully');
+        } else {
+            showError('Failed to generate PDF report');
+        }
+    })
+    .catch(error => {
+        console.error('Export error:', error);
+        showError('Failed to export report');
+    });
+}
+
+function showSuccess(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 3000);
+}
+
+function showError(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}
