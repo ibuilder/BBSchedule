@@ -1582,24 +1582,35 @@ def api_project_linear_schedule(project_id):
                 })
         
         return jsonify({
-            'project': {
-                'id': project.id,
-                'name': project.name,
-                'start_station': project.project_start_station or 0,
-                'end_station': project.project_end_station or 100,
-                'station_units': project.station_units or 'm'
+            'success': True,
+            'data': {
+                'project': {
+                    'id': project.id,
+                    'name': project.name,
+                    'start_station': project.project_start_station or 0,
+                    'end_station': project.project_end_station or 100,
+                    'station_units': project.station_units or 'm',
+                    'linear_scheduling_enabled': project.linear_scheduling_enabled
+                },
+                'activities': linear_data,
+                'timeline': linear_data  # Timeline is the same as activities for linear schedule
             },
-            'activities': linear_data,
-            'linear_data': {
-                'total_length': (project.project_end_station or 100) - (project.project_start_station or 0),
-                'activities_with_location': len(linear_data),
-                'average_production_rate': sum(a['production_rate'] for a in linear_data) / len(linear_data) if linear_data else 0
+            'metadata': {
+                'total_activities': len(activities),
+                'location_activities': len(linear_data),
+                'timeline_entries': len(linear_data),
+                'project_length': (project.project_end_station or 100) - (project.project_start_station or 0),
+                'units': project.station_units or 'm'
             }
         })
         
     except Exception as e:
         log_error(e, {'endpoint': 'api_project_linear_schedule', 'project_id': project_id})
-        return jsonify({'error': 'Failed to load linear schedule data'}), 500
+        return jsonify({
+            'success': False,
+            'error': 'Failed to load linear schedule data',
+            'details': str(e)
+        }), 500
 
 # Missing route aliases and export functions
 @app.route('/dashboard')
