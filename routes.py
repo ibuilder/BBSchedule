@@ -1614,11 +1614,7 @@ def api_project_linear_schedule(project_id):
         }), 500
 
 # Missing route aliases and export functions
-@app.route('/dashboard')
-@login_required  
-def dashboard():
-    """Dashboard alias route"""
-    return redirect(url_for('index'))
+# Dashboard route is handled by the main dashboard function above
 
 @app.route('/project/<int:project_id>/export/excel')
 @login_required

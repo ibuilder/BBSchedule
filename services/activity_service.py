@@ -10,6 +10,11 @@ class ActivityService:
     """Service class for activity operations."""
     
     @staticmethod
+    def get_project_activities(project_id, user_id=None):
+        """Get all activities for a project (alias for backward compatibility)."""
+        return ActivityService.get_activities_by_project(project_id, user_id)
+    
+    @staticmethod
     def get_activities_by_project(project_id, user_id=None):
         """Get all activities for a project."""
         try:
@@ -30,6 +35,19 @@ class ActivityService:
         except Exception as e:
             log_error(e, f"Failed to retrieve activity {activity_id}")
             return None
+    
+    @staticmethod
+    def get_overdue_activities(project_id, user_id=None):
+        """Get overdue activities for a project."""
+        try:
+            from datetime import date
+            activities = Activity.query.filter_by(project_id=project_id).all()
+            overdue = [a for a in activities if a.end_date and a.end_date < date.today() and a.progress < 100]
+            log_activity(user_id, f"Retrieved overdue activities for project {project_id}", f"Count: {len(overdue)}")
+            return overdue
+        except Exception as e:
+            log_error(e, f"Failed to retrieve overdue activities for project {project_id}")
+            return []
     
     @staticmethod
     def create_activity(project_id, form_data, user_id=None):

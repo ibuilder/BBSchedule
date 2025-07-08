@@ -370,3 +370,40 @@ class AnalyticsService:
         except Exception as e:
             print(f"Error in combined 5D analysis: {str(e)}")
             return {'error': 'Analysis failed'}
+    
+    @staticmethod
+    def get_project_analytics(project_id):
+        """Get analytics for a specific project."""
+        try:
+            project = Project.query.get(project_id)
+            if not project:
+                return {}
+            
+            activities = Activity.query.filter_by(project_id=project_id).all()
+            
+            # Basic project analytics
+            total_activities = len(activities)
+            completed_activities = len([a for a in activities if a.progress >= 100])
+            completion_rate = (completed_activities / total_activities * 100) if total_activities > 0 else 0
+            
+            # Cost analytics
+            total_estimated_cost = sum(a.cost_estimate or 0 for a in activities)
+            total_actual_cost = sum(a.actual_cost or 0 for a in activities)
+            cost_variance = total_actual_cost - total_estimated_cost if total_estimated_cost > 0 else 0
+            
+            analytics = {
+                'project_id': project_id,
+                'project_name': project.name,
+                'total_activities': total_activities,
+                'completed_activities': completed_activities,
+                'completion_rate': completion_rate,
+                'total_estimated_cost': total_estimated_cost,
+                'total_actual_cost': total_actual_cost,
+                'cost_variance': cost_variance,
+                'project_status': project.status.value if project.status else 'unknown'
+            }
+            
+            return analytics
+        except Exception as e:
+            log_error(e, f"Failed to get project analytics for {project_id}")
+            return {}
