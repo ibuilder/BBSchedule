@@ -60,11 +60,21 @@ class AIOptimizationManager {
         try {
             // Get project ID from URL if not provided
             if (!projectId) {
-                const urlParts = window.location.pathname.split('/');
-                projectId = urlParts[urlParts.indexOf('project') + 1];
+                projectId = this.getCurrentProjectId();
+            }
+
+            // Only load AI recommendations if we're on a project page
+            if (!projectId) {
+                console.log('Not on a project page - skipping AI recommendations');
+                return;
             }
 
             const response = await fetch(`/api/project/${projectId}/ai_recommendations`);
+            
+            if (!response.ok) {
+                throw new Error(`API returned ${response.status}: ${response.statusText}`);
+            }
+            
             const data = await response.json();
 
             if (data.error) {
@@ -327,10 +337,11 @@ class AIOptimizationManager {
      */
     getCurrentProjectId() {
         const urlParts = window.location.pathname.split('/');
-        const projectIndex = urlParts.indexOf('project');
+        const projectIndex = urlParts.indexOf('projects');
         
         if (projectIndex !== -1 && urlParts[projectIndex + 1]) {
-            return urlParts[projectIndex + 1];
+            const id = parseInt(urlParts[projectIndex + 1]);
+            return !isNaN(id) ? id : null;
         }
         
         return null;
