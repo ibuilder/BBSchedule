@@ -1,17 +1,18 @@
 """
-Main application factory and configuration.
+BBSchedule Application Factory
+Enterprise-grade construction project scheduling platform
 """
 import os
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from config import config
+from config import get_config
 from extensions import db
 from logger import setup_logging
-from security_middleware import SecurityMiddleware
-from health_check import health_bp
-from error_handlers import register_error_handlers
-from monitoring import start_monitoring
+from core.middleware import SecurityMiddleware
+from core.health import health_bp
+from core.errors import register_error_handlers
+from core.monitoring_legacy import start_monitoring
 
 def create_app(config_name=None):
     """Application factory pattern."""
@@ -19,7 +20,9 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'default')
     
     app = Flask(__name__)
-    app.config.from_object(config[config_name])
+    # Load configuration
+    config_class = get_config()
+    app.config.from_object(config_class)
     
     # Set up proxy fix for production
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)

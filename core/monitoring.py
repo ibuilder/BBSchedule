@@ -4,7 +4,10 @@ Enterprise monitoring and observability for BBSchedule
 
 import os
 import time
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
 import logging
 from datetime import datetime, timedelta
 from dataclasses import dataclass

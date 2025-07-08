@@ -10,8 +10,14 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify, current_app, session
 from werkzeug.security import check_password_hash, generate_password_hash
-import redis
-from cryptography.fernet import Fernet
+try:
+    import redis
+except ImportError:
+    redis = None
+try:
+    from cryptography.fernet import Fernet
+except ImportError:
+    Fernet = None
 import logging
 
 # Security logging

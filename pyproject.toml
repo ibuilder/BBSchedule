@@ -26,4 +26,9 @@ dependencies = [
     "matplotlib>=3.10.3",
     "seaborn>=0.13.2",
     "requests>=2.32.4",
+    "redis>=6.2.0",
+    "cryptography>=45.0.5",
+    "prometheus-client>=0.22.1",
+    "psutil>=7.0.0",
+    "numpy>=2.3.1",
 ]

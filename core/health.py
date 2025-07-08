@@ -6,8 +6,14 @@ import time
 from datetime import datetime
 from flask import Blueprint, jsonify, current_app
 from sqlalchemy import text
-from extensions import db
-from models import Project, Activity
+try:
+    from extensions import db
+except ImportError:
+    db = None
+try:
+    from models import Project, Activity
+except ImportError:
+    Project = Activity = None
 
 health_bp = Blueprint('health', __name__, url_prefix='/health')
 

@@ -10,7 +10,10 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 from flask import current_app
 from extensions import db
-from models import Project, Activity, ProjectStatus
+try:
+    from models import Project, Activity, ProjectStatus
+except ImportError:
+    Project = Activity = ProjectStatus = None
 
 @dataclass
 class Alert:

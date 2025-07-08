@@ -5,7 +5,11 @@ import traceback
 from flask import jsonify, render_template, request, current_app
 from werkzeug.exceptions import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
-from security_middleware import log_security_event
+try:
+    from core.middleware import log_security_event
+except ImportError:
+    def log_security_event(*args, **kwargs):
+        pass
 
 def register_error_handlers(app):
     """Register comprehensive error handlers."""

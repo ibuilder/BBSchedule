@@ -7,15 +7,15 @@ import logging
 from flask import Flask
 from datetime import timedelta
 
-# Import enterprise modules
-from enterprise_security import (
+# Import core modules
+from .security import (
     enterprise_auth, rbac, audit_logger, data_encryption, 
     security_middleware, EnterpriseCompliance
 )
-from enterprise_monitoring import init_enterprise_monitoring
-from enterprise_scalability import init_enterprise_scalability
-from enterprise_integration import init_enterprise_integrations
-from enterprise_compliance import init_enterprise_compliance
+from .monitoring import init_enterprise_monitoring
+from .scalability import init_enterprise_scalability
+from .integrations import init_enterprise_integrations
+from .compliance import init_enterprise_compliance
 
 # Enterprise logging setup
 def setup_enterprise_logging():
