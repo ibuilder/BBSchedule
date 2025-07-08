@@ -1655,3 +1655,340 @@ def export_pdf(project_id):
         log_error(e, {'endpoint': 'export_pdf', 'project_id': project_id})
         flash('Failed to export PDF file', 'error')
         return redirect(url_for('project_detail', project_id=project_id))
+
+# Missing API endpoints that JavaScript is trying to access
+@app.route('/api/project/<int:project_id>/activities')
+@login_required
+def api_project_activities(project_id):
+    """API endpoint for project activities - enhanced for JavaScript charts"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        
+        activities = Activity.query.filter_by(project_id=project_id).all()
+        
+        # Enhanced activity data for charts
+        activity_data = []
+        for activity in activities:
+            activity_info = {
+                'id': activity.id,
+                'name': activity.name,
+                'description': activity.description or '',
+                'duration': activity.duration,
+                'progress': activity.progress or 0,
+                'start_date': activity.start_date.isoformat() if activity.start_date else None,
+                'end_date': activity.end_date.isoformat() if activity.end_date else None,
+                'activity_type': activity.activity_type.value if activity.activity_type else 'other',
+                'quantity': activity.quantity or 0,
+                'unit': activity.unit or '',
+                'production_rate': activity.production_rate or 0,
+                'resource_crew_size': activity.resource_crew_size or 0,
+                'cost_estimate': activity.cost_estimate or 0,
+                'actual_cost': activity.actual_cost or 0,
+                'location_start': activity.location_start or 0,
+                'location_end': activity.location_end or 0,
+                'status': 'completed' if activity.progress == 100 else 'in_progress' if activity.progress > 0 else 'not_started',
+                'is_critical': False,  # Will be updated by critical path calculation
+                'predecessors': [dep.predecessor_id for dep in activity.predecessors] if hasattr(activity, 'predecessors') else [],
+                'successors': [dep.successor_id for dep in activity.successors] if hasattr(activity, 'successors') else []
+            }
+            activity_data.append(activity_info)
+        
+        # Calculate critical path and mark critical activities
+        try:
+            from services.scheduling_service import SchedulingService
+            critical_path = SchedulingService.calculate_critical_path(project_id)
+            critical_activity_ids = [cp['activity_id'] if isinstance(cp, dict) else cp for cp in critical_path]
+            
+            for activity in activity_data:
+                activity['is_critical'] = activity['id'] in critical_activity_ids
+        except Exception as e:
+            log_error(e, f"Critical path calculation failed for project {project_id}")
+        
+        log_activity(user_id, f"Retrieved activities for project {project.name}", {'project_id': project_id, 'activity_count': len(activity_data)})
+        
+        return jsonify({
+            'success': True,
+            'project': {
+                'id': project.id,
+                'name': project.name,
+                'start_date': project.start_date.isoformat() if project.start_date else None,
+                'end_date': project.end_date.isoformat() if project.end_date else None,
+                'status': project.status.value if project.status else 'planning',
+                'linear_scheduling_enabled': project.linear_scheduling_enabled,
+                'start_station': project.project_start_station or 0,
+                'end_station': project.project_end_station or 100,
+                'station_units': project.station_units or 'm'
+            },
+            'activities': activity_data,
+            'total_activities': len(activity_data),
+            'completed_activities': len([a for a in activity_data if a['status'] == 'completed']),
+            'in_progress_activities': len([a for a in activity_data if a['status'] == 'in_progress']),
+            'critical_activities': len([a for a in activity_data if a['is_critical']])
+        })
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'api_project_activities', 'project_id': project_id})
+        return jsonify({
+            'success': False,
+            'error': 'Failed to load project activities',
+            'details': str(e)
+        }), 500
+
+@app.route('/api/project/<int:project_id>/chart_data')
+@login_required  
+def api_project_chart_data(project_id):
+    """Enhanced API endpoint specifically for chart visualization"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        activities = Activity.query.filter_by(project_id=project_id).all()
+        
+        # Prepare data optimized for Chart.js
+        chart_data = {
+            'gantt': {
+                'datasets': [],
+                'labels': [],
+                'timeline': {
+                    'start': project.start_date.isoformat() if project.start_date else None,
+                    'end': project.end_date.isoformat() if project.end_date else None
+                }
+            },
+            'progress': {
+                'labels': [],
+                'datasets': [{
+                    'label': 'Progress (%)',
+                    'data': [],
+                    'backgroundColor': [],
+                    'borderColor': []
+                }]
+            },
+            'linear': {
+                'datasets': [],
+                'stations': {
+                    'start': project.project_start_station or 0,
+                    'end': project.project_end_station or 100,
+                    'units': project.station_units or 'm'
+                }
+            }
+        }
+        
+        # Generate colors for activities
+        colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#20c997', '#6c757d']
+        
+        for i, activity in enumerate(activities):
+            color = colors[i % len(colors)]
+            
+            # Gantt chart data
+            if activity.start_date and activity.end_date:
+                chart_data['gantt']['datasets'].append({
+                    'label': activity.name,
+                    'data': [{
+                        'x': [activity.start_date.isoformat(), activity.end_date.isoformat()],
+                        'y': activity.name
+                    }],
+                    'backgroundColor': color + '80',  # Semi-transparent
+                    'borderColor': color,
+                    'borderWidth': 2
+                })
+                chart_data['gantt']['labels'].append(activity.name)
+            
+            # Progress chart data  
+            chart_data['progress']['labels'].append(activity.name[:20] + '...' if len(activity.name) > 20 else activity.name)
+            chart_data['progress']['datasets'][0]['data'].append(activity.progress or 0)
+            chart_data['progress']['datasets'][0]['backgroundColor'].append(color + '80')
+            chart_data['progress']['datasets'][0]['borderColor'].append(color)
+            
+            # Linear schedule data
+            if activity.location_start is not None and activity.location_end is not None:
+                chart_data['linear']['datasets'].append({
+                    'label': activity.name,
+                    'data': [{
+                        'x': activity.location_start,
+                        'y': activity.start_date.isoformat() if activity.start_date else None
+                    }, {
+                        'x': activity.location_end,
+                        'y': activity.end_date.isoformat() if activity.end_date else None
+                    }],
+                    'borderColor': color,
+                    'backgroundColor': color + '40',
+                    'fill': False,
+                    'tension': 0.1
+                })
+        
+        return jsonify({
+            'success': True,
+            'chart_data': chart_data,
+            'project_info': {
+                'name': project.name,
+                'total_activities': len(activities),
+                'completion_percentage': project.calculate_completion_percentage()
+            }
+        })
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'api_project_chart_data', 'project_id': project_id})
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate chart data',
+            'details': str(e)
+        }), 500
+
+# Utility endpoints for enhanced JavaScript support
+@app.route('/api/project/<int:project_id>/schedule_summary')
+@login_required
+def api_project_schedule_summary(project_id):
+    """API endpoint for project schedule summary statistics"""
+    try:
+        project = Project.query.get_or_404(project_id)
+        activities = Activity.query.filter_by(project_id=project_id).all()
+        
+        # Calculate summary statistics
+        total_activities = len(activities)
+        completed_activities = len([a for a in activities if a.progress == 100])
+        in_progress_activities = len([a for a in activities if 0 < a.progress < 100])
+        not_started_activities = len([a for a in activities if a.progress == 0])
+        
+        # Calculate date range
+        start_dates = [a.start_date for a in activities if a.start_date]
+        end_dates = [a.end_date for a in activities if a.end_date]
+        
+        project_start = min(start_dates) if start_dates else project.start_date
+        project_end = max(end_dates) if end_dates else project.end_date
+        
+        # Calculate overall progress
+        if total_activities > 0:
+            overall_progress = sum(a.progress or 0 for a in activities) / total_activities
+        else:
+            overall_progress = 0
+        
+        # Calculate cost summary
+        total_estimated_cost = sum(a.cost_estimate or 0 for a in activities)
+        total_actual_cost = sum(a.actual_cost or 0 for a in activities)
+        
+        return jsonify({
+            'success': True,
+            'summary': {
+                'project_name': project.name,
+                'total_activities': total_activities,
+                'completed_activities': completed_activities,
+                'in_progress_activities': in_progress_activities,
+                'not_started_activities': not_started_activities,
+                'overall_progress': round(overall_progress, 1),
+                'project_start': project_start.isoformat() if project_start else None,
+                'project_end': project_end.isoformat() if project_end else None,
+                'total_estimated_cost': total_estimated_cost,
+                'total_actual_cost': total_actual_cost,
+                'cost_variance': total_actual_cost - total_estimated_cost if total_estimated_cost > 0 else 0
+            }
+        })
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'api_project_schedule_summary', 'project_id': project_id})
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate schedule summary'
+        }), 500
+
+@app.route('/api/project/<int:project_id>/add_sample_activities', methods=['POST'])
+@login_required
+def api_add_sample_activities(project_id):
+    """Helper endpoint to add sample activities for testing visualization"""
+    try:
+        project = Project.query.get_or_404(project_id)
+        
+        # Check if project already has activities
+        existing_activities = Activity.query.filter_by(project_id=project_id).count()
+        if existing_activities > 0:
+            return jsonify({
+                'success': False,
+                'message': 'Project already has activities'
+            })
+        
+        # Create sample activities with proper dates for visualization
+        from datetime import datetime, timedelta
+        
+        base_date = project.start_date or datetime.now().date()
+        
+        sample_activities = [
+            {
+                'name': 'Site Preparation',
+                'description': 'Clear and prepare construction site',
+                'duration': 5,
+                'activity_type': ActivityType.MOBILIZATION,
+                'start_date': base_date,
+                'end_date': base_date + timedelta(days=5),
+                'progress': 100,
+                'location_start': 0,
+                'location_end': 100
+            },
+            {
+                'name': 'Foundation Work',
+                'description': 'Excavation and foundation installation',
+                'duration': 15,
+                'activity_type': ActivityType.EARTHWORK,
+                'start_date': base_date + timedelta(days=5),
+                'end_date': base_date + timedelta(days=20),
+                'progress': 75,
+                'location_start': 0,
+                'location_end': 50
+            },
+            {
+                'name': 'Structural Framing',
+                'description': 'Steel and concrete structural work',
+                'duration': 25,
+                'activity_type': ActivityType.STRUCTURAL,
+                'start_date': base_date + timedelta(days=15),
+                'end_date': base_date + timedelta(days=40),
+                'progress': 45,
+                'location_start': 25,
+                'location_end': 75
+            },
+            {
+                'name': 'MEP Installation',
+                'description': 'Mechanical, electrical, and plumbing systems',
+                'duration': 20,
+                'activity_type': ActivityType.MEP,
+                'start_date': base_date + timedelta(days=30),
+                'end_date': base_date + timedelta(days=50),
+                'progress': 20,
+                'location_start': 40,
+                'location_end': 90
+            },
+            {
+                'name': 'Finishing Work',
+                'description': 'Interior and exterior finishing',
+                'duration': 15,
+                'activity_type': ActivityType.FINISHING,
+                'start_date': base_date + timedelta(days=45),
+                'end_date': base_date + timedelta(days=60),
+                'progress': 0,
+                'location_start': 60,
+                'location_end': 100
+            }
+        ]
+        
+        created_activities = []
+        for activity_data in sample_activities:
+            activity = Activity(
+                project_id=project_id,
+                **activity_data
+            )
+            db.session.add(activity)
+            created_activities.append(activity_data['name'])
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Added {len(created_activities)} sample activities',
+            'activities': created_activities
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        log_error(e, {'endpoint': 'api_add_sample_activities', 'project_id': project_id})
+        return jsonify({
+            'success': False,
+            'error': 'Failed to add sample activities'
+        }), 500
