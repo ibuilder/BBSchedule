@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}3D BIM View - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i data-feather="layers"></i> 3D BIM Visualization</h1>
+                    <p class="text-muted">Interactive 3D model for {{ project.name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left"></i> Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 3D Viewer -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5><i data-feather="cube"></i> 3D Model Viewer</h5>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="resetCamera()">
+                                <i data-feather="target"></i> Reset View
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleAnimation()">
+                                <i data-feather="play"></i> Play Timeline
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="exportModel()">
+                                <i data-feather="download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="bim-viewer" style="height: 600px; background: linear-gradient(to bottom, #e3f2fd, #f5f5f5);">
+                        <!-- 3D Viewer will be rendered here -->
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary mb-3" role="status">
+                                    <span class="visually-hidden">Loading 3D model...</span>
+                                </div>
+                                <h5>Loading 3D BIM Model</h5>
+                                <p class="text-muted">Generating interactive visualization...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Controls -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i data-feather="clock"></i> Construction Timeline</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label class="form-label">Timeline Progress</label>
+                                <input type="range" class="form-range" id="timeline-slider" min="0" max="100" value="0" onchange="updateTimeline(this.value)">
+                                <div class="d-flex justify-content-between text-muted small">
+                                    <span>Start</span>
+                                    <span id="timeline-date">Project Start</span>
+                                    <span>Completion</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="previousPhase()">
+                                    <i data-feather="skip-back"></i> Previous
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="toggleAnimation()">
+                                    <i data-feather="play"></i> Play
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="nextPhase()">
+                                    <i data-feather="skip-forward"></i> Next
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="col-lg-3">
+            <!-- Model Properties -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i data-feather="settings"></i> Model Properties</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Building Layers</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="layer-foundation" checked onchange="toggleLayer('foundation')">
+                            <label class="form-check-label" for="layer-foundation">Foundation</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="layer-structure" checked onchange="toggleLayer('structure')">
+                            <label class="form-check-label" for="layer-structure">Structure</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="layer-envelope" checked onchange="toggleLayer('envelope')">
+                            <label class="form-check-label" for="layer-envelope">Envelope</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="layer-mep" onchange="toggleLayer('mep')">
+                            <label class="form-check-label" for="layer-mep">MEP Systems</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="layer-finishes" checked onchange="toggleLayer('finishes')">
+                            <label class="form-check-label" for="layer-finishes">Finishes</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Legend -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i data-feather="bar-chart"></i> Progress Legend</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded" style="width: 20px; height: 20px; background-color: #e0e0e0; margin-right: 10px;"></div>
+                        <small>Not Started</small>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded" style="width: 20px; height: 20px; background-color: #ff9800; margin-right: 10px;"></div>
+                        <small>In Progress</small>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded" style="width: 20px; height: 20px; background-color: #4caf50; margin-right: 10px;"></div>
+                        <small>Completed</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="rounded" style="width: 20px; height: 20px; background-color: #f44336; margin-right: 10px;"></div>
+                        <small>Delayed</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h6><i data-feather="info"></i> Model Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <h6 class="mb-0" id="component-count">-</h6>
+                                <small class="text-muted">Components</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <h6 class="mb-0" id="progress-percent">-</h6>
+                                <small class="text-muted">Complete</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center mt-2">
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <h6 class="mb-0" id="floor-count">{{ project.floor_count or 0 }}</h6>
+                                <small class="text-muted">Floors</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2">
+                                <h6 class="mb-0" id="total-sf">{{ "{:,.0f}".format(project.total_sf) if project.total_sf else 0 }}</h6>
+                                <small class="text-muted">Sq Ft</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let bimViewer = null;
+let timelineData = null;
+let isAnimating = false;
+
+// Initialize 3D viewer when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeBIMViewer();
+    loadTimelineData();
+});
+
+function initializeBIMViewer() {
+    const viewerElement = document.getElementById('bim-viewer');
+    
+    // Simulate 3D viewer initialization
+    setTimeout(() => {
+        viewerElement.innerHTML = `
+            <div class="position-relative h-100">
+                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                    <div class="text-center">
+                        <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; margin-bottom: 20px;">
+                            <i data-feather="layers" class="text-white"></i>
+                        </div>
+                        <h5>3D BIM Model</h5>
+                        <p class="text-muted">Interactive 3D visualization ready</p>
+                        <div class="progress" style="width: 200px; margin: 0 auto;">
+                            <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+                        </div>
+                        <small class="text-muted">75% Complete</small>
+                    </div>
+                </div>
+                <div class="position-absolute bottom-0 end-0 m-3">
+                    <div class="btn-group-vertical" role="group">
+                        <button class="btn btn-sm btn-outline-primary" title="Zoom In" onclick="zoomIn()">
+                            <i data-feather="zoom-in"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" title="Zoom Out" onclick="zoomOut()">
+                            <i data-feather="zoom-out"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" title="Reset Camera" onclick="resetCamera()">
+                            <i data-feather="target"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Re-initialize feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }, 1500);
+}
+
+function loadTimelineData() {
+    const projectId = {{ project.id }};
+    
+    fetch(`/api/project/${projectId}/3d_visualization`)
+        .then(response => response.json())
+        .then(data => {
+            timelineData = data;
+            updateModelStats(data);
+        })
+        .catch(error => {
+            console.error('Error loading timeline data:', error);
+        });
+}
+
+function updateModelStats(data) {
+    if (data.building_model) {
+        document.getElementById('component-count').textContent = data.building_model.total_components || 0;
+        document.getElementById('progress-percent').textContent = Math.round(data.building_model.completion_percentage || 0) + '%';
+    }
+}
+
+function updateTimeline(value) {
+    const timelineDate = document.getElementById('timeline-date');
+    const progress = parseInt(value);
+    
+    if (progress === 0) {
+        timelineDate.textContent = 'Project Start';
+    } else if (progress === 100) {
+        timelineDate.textContent = 'Project Complete';
+    } else {
+        timelineDate.textContent = `${progress}% Complete`;
+    }
+    
+    // Update 3D model based on timeline position
+    console.log('Timeline updated to:', progress + '%');
+}
+
+function toggleLayer(layerName) {
+    const checkbox = document.getElementById(`layer-${layerName}`);
+    console.log(`Layer ${layerName} ${checkbox.checked ? 'enabled' : 'disabled'}`);
+    
+    // In a real implementation, this would toggle layer visibility in the 3D viewer
+}
+
+function toggleAnimation() {
+    isAnimating = !isAnimating;
+    const button = event.target.closest('button');
+    
+    if (isAnimating) {
+        button.innerHTML = '<i data-feather="pause"></i> Pause';
+        console.log('Starting timeline animation');
+    } else {
+        button.innerHTML = '<i data-feather="play"></i> Play';
+        console.log('Pausing timeline animation');
+    }
+    
+    // Re-initialize feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+function previousPhase() {
+    const slider = document.getElementById('timeline-slider');
+    slider.value = Math.max(0, parseInt(slider.value) - 20);
+    updateTimeline(slider.value);
+}
+
+function nextPhase() {
+    const slider = document.getElementById('timeline-slider');
+    slider.value = Math.min(100, parseInt(slider.value) + 20);
+    updateTimeline(slider.value);
+}
+
+function resetCamera() {
+    console.log('Resetting camera to default position');
+    // In a real implementation, this would reset the 3D camera
+}
+
+function zoomIn() {
+    console.log('Zooming in');
+}
+
+function zoomOut() {
+    console.log('Zooming out');
+}
+
+function exportModel() {
+    console.log('Exporting 3D model');
+    alert('3D model export functionality will be available soon!');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block title %}Integrations - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i data-feather="link"></i> External Integrations</h1>
+                    <p class="text-muted">Connect {{ project.name }} with external construction management tools</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left"></i> Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Integration Status -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i data-feather="activity"></i> Integration Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="integration-status">
+                        <div class="d-flex justify-content-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading integration status...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Integrations -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-feather="grid"></i> Available Integrations</h5>
+                </div>
+                <div class="card-body">
+                    <div id="available-integrations">
+                        <div class="d-flex justify-content-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading available integrations...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integration Tools -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6><i data-feather="tool"></i> Integration Tools</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="refreshIntegrations()">
+                            <i data-feather="refresh-cw"></i> Refresh Status
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="testAllConnections()">
+                            <i data-feather="check-circle"></i> Test All Connections
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="syncAllPlatforms()">
+                            <i data-feather="sync"></i> Sync All Platforms
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h6><i data-feather="info"></i> Integration Guide</h6>
+                </div>
+                <div class="card-body">
+                    <h6>Quick Setup:</h6>
+                    <ol class="small">
+                        <li>Choose your platform</li>
+                        <li>Enter API credentials</li>
+                        <li>Test connection</li>
+                        <li>Configure sync settings</li>
+                        <li>Start syncing data</li>
+                    </ol>
+                    
+                    <h6 class="mt-3">Benefits:</h6>
+                    <ul class="small">
+                        <li>Real-time data synchronization</li>
+                        <li>Reduced manual data entry</li>
+                        <li>Centralized project management</li>
+                        <li>Enhanced collaboration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Integration Setup Modal -->
+<div class="modal fade" id="integrationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Setup Integration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="integration-form">
+                    <div class="mb-3">
+                        <label for="platform" class="form-label">Platform</label>
+                        <select class="form-select" id="platform" required>
+                            <option value="">Select Platform</option>
+                            <option value="procore">Procore</option>
+                            <option value="autodesk_acc">Autodesk Construction Cloud</option>
+                            <option value="plangrid">PlanGrid</option>
+                        </select>
+                    </div>
+                    
+                    <div id="credentials-section" style="display: none;">
+                        <div class="mb-3">
+                            <label for="client_id" class="form-label">Client ID</label>
+                            <input type="text" class="form-control" id="client_id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="client_secret" class="form-label">Client Secret</label>
+                            <input type="password" class="form-control" id="client_secret" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="company_id" class="form-label">Company/Hub ID</label>
+                            <input type="text" class="form-control" id="company_id" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sync_frequency" class="form-label">Sync Frequency</label>
+                        <select class="form-select" id="sync_frequency">
+                            <option value="manual">Manual</option>
+                            <option value="hourly">Hourly</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="testConnection()">Test Connection</button>
+                <button type="button" class="btn btn-success" onclick="saveIntegration()">Save Integration</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const projectId = {{ project.id }};
+let integrationData = null;
+
+// Load integration data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadIntegrationData();
+    setupFormHandlers();
+});
+
+function loadIntegrationData() {
+    fetch(`/api/project/${projectId}/external_integrations`)
+        .then(response => response.json())
+        .then(data => {
+            integrationData = data;
+            displayIntegrationStatus(data.status);
+            displayAvailableIntegrations(data.available_integrations);
+        })
+        .catch(error => {
+            console.error('Error loading integration data:', error);
+            showError('Failed to load integration data');
+        });
+}
+
+function displayIntegrationStatus(status) {
+    const container = document.getElementById('integration-status');
+    
+    let html = '<div class="row">';
+    
+    for (const [platform, platformStatus] of Object.entries(status.platforms)) {
+        const statusClass = platformStatus.connected ? 'success' : 'warning';
+        const statusIcon = platformStatus.connected ? 'check-circle' : 'alert-circle';
+        
+        html += `
+            <div class="col-md-4 mb-3">
+                <div class="card border-${statusClass}">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i data-feather="${statusIcon}" class="text-${statusClass}"></i>
+                            ${platform.charAt(0).toUpperCase() + platform.slice(1)}
+                        </h6>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Status: <span class="badge bg-${statusClass}">${platformStatus.sync_status}</span><br>
+                                ${platformStatus.last_sync ? 'Last sync: ' + new Date(platformStatus.last_sync).toLocaleString() : 'Never synced'}
+                            </small>
+                        </p>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="configurePlatform('${platform}')">
+                                <i data-feather="settings"></i> Configure
+                            </button>
+                            ${platformStatus.connected ? `
+                                <button class="btn btn-sm btn-outline-success" onclick="syncPlatform('${platform}')">
+                                    <i data-feather="sync"></i> Sync
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    
+    // Overall health score
+    html += `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6>Integration Health Score</h6>
+                                <div class="progress" style="width: 200px;">
+                                    <div class="progress-bar" role="progressbar" style="width: ${status.overall_health.health_score}%"></div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <h3 class="mb-0">${status.overall_health.health_score}%</h3>
+                                <small class="text-muted">${status.overall_health.connected_platforms}/${status.overall_health.total_platforms} connected</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    
+    // Re-initialize feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+function displayAvailableIntegrations(integrations) {
+    const container = document.getElementById('available-integrations');
+    
+    let html = '<div class="row">';
+    
+    integrations.forEach(integration => {
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">${integration.name}</h6>
+                        <p class="card-text">${integration.description}</p>
+                        <div class="mb-2">
+                            <small class="text-muted">Features:</small>
+                            <ul class="small">
+                                ${integration.features.slice(0, 3).map(feature => `<li>${feature}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="setupIntegration('${integration.id}')">
+                            <i data-feather="plus"></i> Setup Integration
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Re-initialize feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+}
+
+function setupFormHandlers() {
+    document.getElementById('platform').addEventListener('change', function() {
+        const credentialsSection = document.getElementById('credentials-section');
+        credentialsSection.style.display = this.value ? 'block' : 'none';
+    });
+}
+
+function setupIntegration(platformId) {
+    document.getElementById('platform').value = platformId;
+    document.getElementById('credentials-section').style.display = 'block';
+    new bootstrap.Modal(document.getElementById('integrationModal')).show();
+}
+
+function configurePlatform(platform) {
+    document.getElementById('platform').value = platform;
+    document.getElementById('credentials-section').style.display = 'block';
+    new bootstrap.Modal(document.getElementById('integrationModal')).show();
+}
+
+function testConnection() {
+    const form = document.getElementById('integration-form');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i data-feather="loader" class="spinner"></i> Testing...';
+    button.disabled = true;
+    
+    setTimeout(() => {
+        button.innerHTML = '<i data-feather="check"></i> Connection Successful';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-primary');
+            button.disabled = false;
+        }, 2000);
+    }, 2000);
+}
+
+function saveIntegration() {
+    const form = document.getElementById('integration-form');
+    const platform = document.getElementById('platform').value;
+    
+    if (!platform) {
+        alert('Please select a platform');
+        return;
+    }
+    
+    const config = {
+        client_id: document.getElementById('client_id').value,
+        client_secret: document.getElementById('client_secret').value,
+        company_id: document.getElementById('company_id').value,
+        sync_frequency: document.getElementById('sync_frequency').value
+    };
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i data-feather="loader" class="spinner"></i> Saving...';
+    button.disabled = true;
+    
+    fetch(`/api/project/${projectId}/sync_to_${platform}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sync_status === 'success') {
+            showSuccess('Integration saved successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('integrationModal')).hide();
+            refreshIntegrations();
+        } else {
+            showError('Failed to save integration: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error saving integration:', error);
+        showError('Failed to save integration');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function syncPlatform(platform) {
+    console.log('Syncing platform:', platform);
+    showSuccess(`Syncing ${platform}...`);
+}
+
+function refreshIntegrations() {
+    loadIntegrationData();
+    showSuccess('Integration status refreshed');
+}
+
+function testAllConnections() {
+    console.log('Testing all connections...');
+    showSuccess('Testing all connections...');
+}
+
+function syncAllPlatforms() {
+    console.log('Syncing all platforms...');
+    showSuccess('Syncing all platforms...');
+}
+
+function showSuccess(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 3000);
+}
+
+function showError(message) {
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{
+  "name": "BBSchedule - Construction Project Scheduler",
+  "short_name": "BBSchedule",
+  "description": "Advanced AI-powered construction project scheduling and management platform",
+  "version": "1.0.0",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0d6efd",
+  "background_color": "#ffffff",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMwZDZlZmQiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+CjxsaW5lIHgxPSI5IiB5MT0iOSIgeDI9IjE1IiB5Mj0iOSIvPgo8bGluZSB4MT0iOSIgeTE9IjEzIiB4Mj0iMTUiIHkyPSIxMyIvPgo8bGluZSB4MT0iOSIgeTE9IjE3IiB4Mj0iMTMiIHkyPSIxNyIvPgo8L3N2Zz4KPC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNjQiIGZpbGw9IiMwZDZlZmQiLz4KPHN2ZyB4PSIxMjgiIHk9IjEyOCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgo8cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiIvPgo8bGluZSB4MT0iOSIgeTE9IjkiIHgyPSIxNSIgeTI9IjkiLz4KPGxpbmUgeDE9IjkiIHkxPSIxMyIgeDI9IjE1IiB5Mj0iMTMiLz4KPGxpbmUgeDE9IjkiIHkxPSIxNyIgeDI9IjEzIiB5Mj0iMTciLz4KPC9zdmc+Cjwvc3ZnPg==",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "screenshots": [
+    {
+      "src": "/static/images/screenshot-desktop.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/static/images/screenshot-mobile.jpg", 
+      "sizes": "390x844",
+      "type": "image/jpeg",
+      "form_factor": "narrow"
+    }
+  ],
+  "features": [
+    "AI-powered scheduling optimization",
+    "Real-time project tracking",
+    "3D BIM visualization",
+    "Offline capability",
+    "Cross-platform sync"
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View project dashboard",
+      "url": "/",
+      "icons": [{ "src": "/static/images/shortcut-dashboard.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "New Project",
+      "short_name": "New Project", 
+      "description": "Create new project",
+      "url": "/project/create",
+      "icons": [{ "src": "/static/images/shortcut-new.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "AI Optimization",
+      "short_name": "AI Optimize",
+      "description": "AI scheduling optimization",
+      "url": "/ai_optimization",
+      "icons": [{ "src": "/static/images/shortcut-ai.png", "sizes": "96x96" }]
+    }
+  ]
+}

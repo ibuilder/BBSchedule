@@ -342,10 +342,66 @@
 <script>
 // AI Optimization JavaScript
 function applyScenario(scenarioId) {
-    if (confirm('Apply this AI optimization scenario to your project?')) {
-        // Implementation would apply the scenario changes
-        alert('Scenario application feature coming soon!');
+    const projectId = window.location.pathname.split('/')[2];
+    
+    if (!confirm('Are you sure you want to apply this AI optimization scenario? This will update your project schedule.')) {
+        return;
     }
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i data-feather="loader" class="spinner"></i> Applying...';
+    button.disabled = true;
+    
+    // Apply the scenario
+    fetch(`/api/project/${projectId}/apply_ai_scenario`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            scenario_id: scenarioId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('AI optimization applied! ' + data.estimated_improvement + ' improvement achieved.', 'success');
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            showNotification('Failed to apply scenario: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error applying scenario:', error);
+        showNotification('Error applying AI optimization scenario. Please try again.', 'error');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
 }
 
 function generateNewScenarios() {
