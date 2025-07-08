@@ -15,15 +15,15 @@
                     <i data-feather="edit"></i>
                     Edit
                 </a>
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-success">
+                <a href="{{ url_for('project_gantt_chart', project_id=project.id) }}" class="btn btn-success">
                     <i data-feather="bar-chart-2"></i>
                     Gantt Chart
                 </a>
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-info">
+                <a href="{{ url_for('project_linear_schedule', project_id=project.id) }}" class="btn btn-info">
                     <i data-feather="trending-up"></i>
                     Linear Schedule
                 </a>
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-warning">
+                <a href="{{ url_for('project_5d_analysis', project_id=project.id) }}" class="btn btn-warning">
                     <i data-feather="layers"></i>
                     5D Analysis
                 </a>

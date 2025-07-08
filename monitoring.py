@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 from flask import current_app
 from extensions import db
-from models import Project, Activity
+from models import Project, Activity, ProjectStatus
 
 @dataclass
 class Alert:
@@ -140,8 +140,8 @@ class MonitoringService:
         """Get business-level metrics."""
         try:
             # Project metrics
-            active_projects = Project.query.filter_by(status='active').count()
-            completed_projects = Project.query.filter_by(status='completed').count()
+            active_projects = Project.query.filter(Project.status == ProjectStatus.ACTIVE).count()
+            completed_projects = Project.query.filter(Project.status == ProjectStatus.COMPLETED).count()
             total_projects = Project.query.count()
             
             # Activity metrics

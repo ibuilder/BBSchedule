@@ -15,7 +15,7 @@
                     <i data-feather="arrow-left"></i>
                     Back to Project
                 </a>
-                <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-success">
+                <a href="{{ url_for('project_gantt_chart', project_id=project.id) }}" class="btn btn-outline-success">
                     <i data-feather="bar-chart-2"></i>
                     Gantt Chart
                 </a>
@@ -178,6 +178,45 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/linear.js') }}"></script>
 <script>
+// Load project linear schedule data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadProjectLinearSchedule();
+});
+
+function loadProjectLinearSchedule() {
+    const projectId = {{ project.id }};
+    
+    fetch(`/api/projects/${projectId}/linear_schedule`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showErrorMessage(data.error);
+                return;
+            }
+            
+            // Initialize linear schedule chart
+            initializeLinearChart(data.project, data.activities, data.linear_data);
+        })
+        .catch(error => {
+            console.error('Error loading linear schedule:', error);
+            showErrorMessage('Failed to load linear schedule data');
+        });
+}
+
+function showErrorMessage(message) {
+    const container = document.getElementById('linear-chart-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i data-feather="trending-up" class="feather-xl text-muted mb-3"></i>
+                <h4 class="text-muted">Error Loading Schedule</h4>
+                <p class="text-muted">${message}</p>
+            </div>
+        `;
+        feather.replace();
+    }
+}
+</script>
 // Define error message function
 function showLinearErrorMessage(message) {
     const container = document.getElementById('linear-chart-container');

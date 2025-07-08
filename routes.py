@@ -462,12 +462,17 @@ def api_project_gantt(project_id):
                 })
         
         # Calculate critical path using scheduling service
-        from services.scheduling_service import SchedulingService
-        critical_path = SchedulingService.calculate_critical_path(project_id)
+        try:
+            from services.scheduling_service import SchedulingService
+            critical_path = SchedulingService.calculate_critical_path(project_id)
+            critical_path_ids = [cp['activity_id'] if isinstance(cp, dict) else cp for cp in critical_path]
+        except Exception as e:
+            log_error(e, f"Critical path calculation error for project {project_id}")
+            critical_path_ids = []
         
         return jsonify({
             'activities': activities,
-            'critical_path': [cp['activity_id'] for cp in critical_path],
+            'critical_path': critical_path_ids,
             'project': {
                 'id': project.id,
                 'name': project.name,
@@ -1498,3 +1503,155 @@ def project_field_monitoring(project_id):
     except Exception as e:
         log_error(e, {'endpoint': 'field_monitoring_page', 'project_id': project_id})
         return render_template('error.html', message="Failed to load field monitoring"), 500
+
+# Project-specific scheduling views
+@app.route('/project/<int:project_id>/gantt')
+@login_required
+def project_gantt_chart(project_id):
+    """Project-specific Gantt chart view"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        
+        log_activity(user_id, f"Accessed Gantt chart for project {project.name}", {'project_id': project_id})
+        
+        return render_template('schedule_gantt.html', project=project)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'project_gantt_chart', 'project_id': project_id})
+        return render_template('error.html', message="Failed to load Gantt chart"), 500
+
+@app.route('/project/<int:project_id>/linear')
+@login_required  
+def project_linear_schedule(project_id):
+    """Project-specific linear schedule view"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        
+        log_activity(user_id, f"Accessed linear schedule for project {project.name}", {'project_id': project_id})
+        
+        return render_template('schedule_linear.html', project=project)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'project_linear_schedule', 'project_id': project_id})
+        return render_template('error.html', message="Failed to load linear schedule"), 500
+
+@app.route('/project/<int:project_id>/5d-analysis')
+@login_required
+def project_5d_analysis(project_id):
+    """Project-specific 5D analysis view"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        
+        log_activity(user_id, f"Accessed 5D analysis for project {project.name}", {'project_id': project_id})
+        
+        return render_template('5d_analysis.html', project=project)
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'project_5d_analysis', 'project_id': project_id})
+        return render_template('error.html', message="Failed to load 5D analysis"), 500
+
+# Missing API endpoints for project-specific views
+@app.route('/api/projects/<int:project_id>/linear_schedule')
+@login_required
+def api_project_linear_schedule(project_id):
+    """API endpoint for project linear schedule data"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        
+        activities = Activity.query.filter_by(project_id=project_id).all()
+        
+        # Generate linear schedule data
+        linear_data = []
+        for activity in activities:
+            if activity.location_start is not None and activity.location_end is not None:
+                linear_data.append({
+                    'id': activity.id,
+                    'name': activity.name,
+                    'start_location': activity.location_start,
+                    'end_location': activity.location_end,
+                    'start_date': activity.start_date.isoformat() if activity.start_date else None,
+                    'end_date': activity.end_date.isoformat() if activity.end_date else None,
+                    'duration': activity.duration,
+                    'progress': activity.progress or 0,
+                    'production_rate': activity.production_rate or 0,
+                    'activity_type': activity.activity_type.value if activity.activity_type else 'other'
+                })
+        
+        return jsonify({
+            'project': {
+                'id': project.id,
+                'name': project.name,
+                'start_station': project.project_start_station or 0,
+                'end_station': project.project_end_station or 100,
+                'station_units': project.station_units or 'm'
+            },
+            'activities': linear_data,
+            'linear_data': {
+                'total_length': (project.project_end_station or 100) - (project.project_start_station or 0),
+                'activities_with_location': len(linear_data),
+                'average_production_rate': sum(a['production_rate'] for a in linear_data) / len(linear_data) if linear_data else 0
+            }
+        })
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'api_project_linear_schedule', 'project_id': project_id})
+        return jsonify({'error': 'Failed to load linear schedule data'}), 500
+
+# Missing route aliases and export functions
+@app.route('/dashboard')
+@login_required  
+def dashboard():
+    """Dashboard alias route"""
+    return redirect(url_for('index'))
+
+@app.route('/project/<int:project_id>/export/excel')
+@login_required
+def export_excel(project_id):
+    """Export project to Excel"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        
+        # Use existing utility function
+        from utils import export_project_to_excel
+        excel_file = export_project_to_excel(project)
+        
+        return send_file(
+            excel_file,
+            as_attachment=True,
+            download_name=f"{project.name}_schedule.xlsx",
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'export_excel', 'project_id': project_id})
+        flash('Failed to export Excel file', 'error')
+        return redirect(url_for('project_detail', project_id=project_id))
+
+@app.route('/project/<int:project_id>/export/pdf')  
+@login_required
+def export_pdf(project_id):
+    """Export project to PDF"""
+    try:
+        user_id = session.get('user_id')
+        project = Project.query.get_or_404(project_id)
+        
+        # Use existing utility function
+        from utils import generate_project_report_pdf
+        pdf_file = generate_project_report_pdf(project)
+        
+        return send_file(
+            pdf_file,
+            as_attachment=True,
+            download_name=f"{project.name}_report.pdf",
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        log_error(e, {'endpoint': 'export_pdf', 'project_id': project_id})
+        flash('Failed to export PDF file', 'error')
+        return redirect(url_for('project_detail', project_id=project_id))
