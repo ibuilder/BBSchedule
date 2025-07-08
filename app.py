@@ -8,6 +8,10 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from config import config
 from extensions import db
 from logger import setup_logging
+from security_middleware import SecurityMiddleware
+from health_check import health_bp
+from error_handlers import register_error_handlers
+from monitoring import start_monitoring
 
 def create_app(config_name=None):
     """Application factory pattern."""
@@ -25,6 +29,24 @@ def create_app(config_name=None):
     
     # Set up logging
     setup_logging(app)
+    
+    # Initialize security middleware
+    security = SecurityMiddleware(app)
+    
+    # Register health check blueprint
+    app.register_blueprint(health_bp)
+    
+    # Register error handlers
+    register_error_handlers(app)
+    
+    # Track application start time for metrics
+    import time
+    app.start_time = time.time()
+    
+    # Initialize monitoring service after app context is available
+    with app.app_context():
+        start_monitoring()
+        app.logger.info("Monitoring service started")
     
     # Create database tables
     with app.app_context():

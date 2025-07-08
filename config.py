@@ -48,6 +48,24 @@ class ProductionConfig(Config):
     """Production configuration."""
     DEBUG = False
     LOG_LEVEL = logging.WARNING
+    
+    # Enhanced security settings
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    # Enhanced database settings for production
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'pool_size': 20,
+        'max_overflow': 30,
+        'pool_timeout': 30,
+    }
+    
+    # Production optimizations
+    SEND_FILE_MAX_AGE_DEFAULT = 86400  # 24 hours
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)  # Shorter session timeout
 
 class TestingConfig(Config):
     """Testing configuration."""

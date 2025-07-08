@@ -973,3 +973,37 @@ def api_create_activity():
         log_error(e, "Create activity API error")
         db.session.rollback()
         return jsonify({'error': 'Failed to create activity'}), 500
+
+# Production Monitoring and AI Routes
+@app.route('/api/monitoring/metrics')
+def monitoring_metrics():
+    """Get application metrics for monitoring dashboard."""
+    try:
+        metrics = monitoring_service.collect_metrics()
+        return jsonify(metrics)
+    except Exception as e:
+        log_error(e, {'endpoint': 'monitoring_metrics'})
+        return jsonify({'error': 'Failed to collect metrics'}), 500
+
+@app.route('/api/monitoring/alerts')
+def monitoring_alerts():
+    """Get active alerts."""
+    try:
+        alerts = monitoring_service.get_active_alerts()
+        return jsonify({
+            'alerts': [
+                {
+                    'id': alert.id,
+                    'severity': alert.severity,
+                    'title': alert.title,
+                    'message': alert.message,
+                    'timestamp': alert.timestamp.isoformat(),
+                    'metadata': alert.metadata
+                }
+                for alert in alerts
+            ]
+        })
+    except Exception as e:
+        log_error(e, {'endpoint': 'monitoring_alerts'})
+        return jsonify({'error': 'Failed to get alerts'}), 500
+
