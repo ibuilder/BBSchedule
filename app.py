@@ -64,3 +64,4 @@ app = create_app()
 
 # Import routes after app is created
 import routes  # noqa: F401
+import routes_sop  # noqa: F401

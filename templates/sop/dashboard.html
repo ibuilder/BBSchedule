@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}SOP Compliance Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i data-feather="check-circle" class="me-2"></i>
+                    Carolinas Scheduling SOP Compliance
+                </h1>
+                <div>
+                    <a href="{{ url_for('create_sop_schedule') }}" class="btn btn-primary">
+                        <i data-feather="plus" class="me-1"></i>
+                        Create SOP Schedule
+                    </a>
+                    <a href="{{ url_for('schedule_templates') }}" class="btn btn-outline-secondary">
+                        <i data-feather="layers" class="me-1"></i>
+                        Templates
+                    </a>
+                </div>
+            </div>
+
+            <!-- SOP Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="display-6 text-success">{{ compliance_summary|length }}</div>
+                            <h6 class="card-title text-muted">Total Projects</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="display-6 text-info">
+                                {{ compliance_summary|selectattr('compliance.schedule_compliance.baseline_complete')|list|length }}
+                            </div>
+                            <h6 class="card-title text-muted">Baseline Complete</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="display-6 text-warning">
+                                {{ compliance_summary|selectattr('compliance.schedule_compliance.requires_4d')|list|length }}
+                            </div>
+                            <h6 class="card-title text-muted">Require 4D</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="display-6 text-primary">
+                                {{ compliance_summary|map(attribute='compliance.reports_generated')|sum }}
+                            </div>
+                            <h6 class="card-title text-muted">Reports Generated</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Compliance Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="list" class="me-2"></i>
+                        Project SOP Compliance Status
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Project Name</th>
+                                    <th>Contract Value</th>
+                                    <th>Project Size</th>
+                                    <th>Float Status</th>
+                                    <th>Activity Compliance</th>
+                                    <th>4D Status</th>
+                                    <th>Reports</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in compliance_summary %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-medium">{{ item.project.name }}</div>
+                                        <small class="text-muted">{{ item.project.location or 'No location' }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            ${{ "{:,.0f}".format(item.compliance.project_info.contract_value) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ item.compliance.project_info.project_size.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set float_status = item.compliance.float_status %}
+                                        {% if float_status == 'positive' %}
+                                            <span class="badge bg-success">
+                                                <i data-feather="trending-up" width="12" height="12"></i>
+                                                Positive
+                                            </span>
+                                        {% elif float_status == 'yellow' %}
+                                            <span class="badge bg-warning">
+                                                <i data-feather="minus" width="12" height="12"></i>
+                                                0 to -15 days
+                                            </span>
+                                        {% elif float_status == 'red' %}
+                                            <span class="badge bg-danger">
+                                                <i data-feather="trending-down" width="12" height="12"></i>
+                                                > -15 days
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Unknown</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set compliance = item.compliance.activity_compliance %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                <div class="progress-bar" style="width: {{ compliance.compliance_rate }}%"></div>
+                                            </div>
+                                            <small class="text-muted">{{ "%.0f"|format(compliance.compliance_rate) }}%</small>
+                                        </div>
+                                        <small class="text-muted">{{ compliance.compliant }}/{{ compliance.total }} activities</small>
+                                    </td>
+                                    <td>
+                                        {% if item.compliance.schedule_compliance.requires_4d %}
+                                            {% if item.compliance.schedule_compliance.four_d_complete %}
+                                                <span class="badge bg-success">
+                                                    <i data-feather="check" width="12" height="12"></i>
+                                                    Complete
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i data-feather="clock" width="12" height="12"></i>
+                                                    Required
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">Not Required</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ item.compliance.reports_generated }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('sop_project_detail', project_id=item.project.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i data-feather="eye" width="12" height="12"></i>
+                                                Details
+                                            </a>
+                                            <a href="{{ url_for('pull_plan_board', project_id=item.project.id) }}" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i data-feather="calendar" width="12" height="12"></i>
+                                                Pull Plan
+                                            </a>
+                                            <a href="{{ url_for('sop_reports', project_id=item.project.id) }}" 
+                                               class="btn btn-outline-info btn-sm">
+                                                <i data-feather="file-text" width="12" height="12"></i>
+                                                Reports
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOP Requirements Summary -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="book-open" class="me-2"></i>
+                                SOP Requirements Summary
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-medium">Schedule Development Timelines</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i data-feather="clock" width="12" height="12" class="me-1"></i> DD Schedule: 2 weeks draft + 1 week review + 1 week finalize</li>
+                                        <li><i data-feather="clock" width="12" height="12" class="me-1"></i> CD Schedule: 2 weeks update + 1 week review + 1 week finalize</li>
+                                        <li><i data-feather="clock" width="12" height="12" class="me-1"></i> Baseline: 2 weeks with ops/sub feedback</li>
+                                    </ul>
+
+                                    <h6 class="fw-medium mt-3">Activity Requirements</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i data-feather="check" width="12" height="12" class="me-1"></i> Activity IDs: Maximum 5 characters</li>
+                                        <li><i data-feather="check" width="12" height="12" class="me-1"></i> Duration: Maximum 15 days</li>
+                                        <li><i data-feather="check" width="12" height="12" class="me-1"></i> All dates populated (AS/AF or PS/PF)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-medium">Scheduler Assignment Rules</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i data-feather="user" width="12" height="12" class="me-1"></i> Scheduler Required: Contract value > $10M</li>
+                                        <li><i data-feather="users" width="12" height="12" class="me-1"></i> Team Updates: Contract value ≤ $10M</li>
+                                        <li><i data-feather="star" width="12" height="12" class="me-1"></i> Senior Scheduler: 5-10 projects or 1-2 very large</li>
+                                    </ul>
+
+                                    <h6 class="fw-medium mt-3">4D Modeling Requirements</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i data-feather="layers" width="12" height="12" class="me-1"></i> Mandatory: All vertical projects > 2 levels</li>
+                                        <li><i data-feather="layers" width="12" height="12" class="me-1"></i> 1 week to complete after initial P6 schedule</li>
+                                        <li><i data-feather="layers" width="12" height="12" class="me-1"></i> Show structure through skin</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+// Auto-refresh every 5 minutes
+setTimeout(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

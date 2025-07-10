@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Pull Planning Board - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">{{ project.name }}</h1>
+                    <p class="text-muted mb-0">3-4 Week Lookahead Pull Planning Board</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('sop_project_detail', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Project
+                    </a>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateModal">
+                        <i data-feather="edit" class="me-1"></i>
+                        Update Board
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pull Planning Board - SOP Format -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="calendar" class="me-2"></i>
+                                3-4 Week Lookahead Schedule (High Level Activities Only)
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-center" style="width: 25%;">
+                                                <i data-feather="calendar" class="me-1"></i>
+                                                Week 1
+                                            </th>
+                                            <th class="text-center" style="width: 25%;">
+                                                <i data-feather="calendar" class="me-1"></i>
+                                                Week 2
+                                            </th>
+                                            <th class="text-center" style="width: 25%;">
+                                                <i data-feather="calendar" class="me-1"></i>
+                                                Week 3
+                                            </th>
+                                            <th class="text-center" style="width: 25%;">
+                                                <i data-feather="calendar" class="me-1"></i>
+                                                Week 4
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="height: 200px;">
+                                            <td class="align-top p-3">
+                                                {% for activity in weeks_data.week_1 %}
+                                                <div class="badge bg-primary mb-2 d-block text-start">
+                                                    {{ activity }}
+                                                </div>
+                                                {% endfor %}
+                                            </td>
+                                            <td class="align-top p-3">
+                                                {% for activity in weeks_data.week_2 %}
+                                                <div class="badge bg-success mb-2 d-block text-start">
+                                                    {{ activity }}
+                                                </div>
+                                                {% endfor %}
+                                            </td>
+                                            <td class="align-top p-3">
+                                                {% for activity in weeks_data.week_3 %}
+                                                <div class="badge bg-warning mb-2 d-block text-start">
+                                                    {{ activity }}
+                                                </div>
+                                                {% endfor %}
+                                            </td>
+                                            <td class="align-top p-3">
+                                                {% for activity in weeks_data.week_4 %}
+                                                <div class="badge bg-info mb-2 d-block text-start">
+                                                    {{ activity }}
+                                                </div>
+                                                {% endfor %}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Special Activities Section -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="truck" class="me-2"></i>
+                                Deliveries
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% for delivery in special_activities.deliveries %}
+                            <div class="d-flex align-items-center mb-2">
+                                <i data-feather="package" class="text-success me-2" width="16" height="16"></i>
+                                <span>{{ delivery }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="shield" class="me-2"></i>
+                                Safety Activities
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% for safety in special_activities.safety %}
+                            <div class="d-flex align-items-center mb-2">
+                                <i data-feather="shield" class="text-warning me-2" width="16" height="16"></i>
+                                <span>{{ safety }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="search" class="me-2"></i>
+                                Inspections
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% for inspection in special_activities.inspections %}
+                            <div class="d-flex align-items-center mb-2">
+                                <i data-feather="search" class="text-info me-2" width="16" height="16"></i>
+                                <span>{{ inspection }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="users" class="me-2"></i>
+                                Preinstallation Meetings
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% for meeting in special_activities.meetings %}
+                            <div class="d-flex align-items-center mb-2">
+                                <i data-feather="users" class="text-secondary me-2" width="16" height="16"></i>
+                                <span>{{ meeting }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Milestone Board -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="flag" class="me-2"></i>
+                                Milestone Board
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 text-center">
+                                    <div class="milestone-item">
+                                        <div class="milestone-icon bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                                            <i data-feather="play" width="20" height="20"></i>
+                                        </div>
+                                        <h6>NTP</h6>
+                                        <small class="text-muted">Notice to Proceed</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <div class="milestone-item">
+                                        <div class="milestone-icon bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                                            <i data-feather="layers" width="20" height="20"></i>
+                                        </div>
+                                        <h6>Foundation Complete</h6>
+                                        <small class="text-muted">Major Milestone</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <div class="milestone-item">
+                                        <div class="milestone-icon bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                                            <i data-feather="home" width="20" height="20"></i>
+                                        </div>
+                                        <h6>Structure Complete</h6>
+                                        <small class="text-muted">Major Milestone</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <div class="milestone-item">
+                                        <div class="milestone-icon bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                                            <i data-feather="check-circle" width="20" height="20"></i>
+                                        </div>
+                                        <h6>Substantial Completion</h6>
+                                        <small class="text-muted">Project Complete</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOP Notes -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="info" class="me-2"></i>
+                                SOP Requirements for Pull Planning
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-medium">Format Requirements</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i data-feather="check" width="12" height="12" class="text-success me-1"></i> Whiteboard format in conference room</li>
+                                        <li><i data-feather="check" width="12" height="12" class="text-success me-1"></i> 3-4 Week lookahead timeframe</li>
+                                        <li><i data-feather="check" width="12" height="12" class="text-success me-1"></i> High level activities only</li>
+                                        <li><i data-feather="check" width="12" height="12" class="text-success me-1"></i> Color coded organization</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-medium">Content Requirements</h6>
+                                    <ul class="list-unstyled small">
+                                        <li><i data-feather="package" width="12" height="12" class="text-info me-1"></i> Material deliveries</li>
+                                        <li><i data-feather="users" width="12" height="12" class="text-info me-1"></i> Preinstallation meetings</li>
+                                        <li><i data-feather="search" width="12" height="12" class="text-info me-1"></i> Inspections</li>
+                                        <li><i data-feather="shield" width="12" height="12" class="text-info me-1"></i> Key safety activities</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <strong>Note:</strong> Pull planning discussions are held during weekly subcontractor meetings. 
+                                    The CPM schedule and pull plan boards should match closely but not necessarily exactly, 
+                                    as pull plan boards are expected to have a greater level of detail.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Pull Planning Board</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Pull planning board updates are typically done during weekly subcontractor meetings with whiteboard collaboration.</p>
+                <div class="alert alert-info">
+                    <i data-feather="info" class="me-2"></i>
+                    This digital board reflects the physical whiteboard in the conference room. Updates should be made collaboratively during team meetings.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+// Auto-refresh pull plan data every 10 minutes
+setInterval(function() {
+    // In a real implementation, this would fetch updated data
+    console.log('Pull plan board auto-refresh');
+}, 600000);
+</script>
+{% endblock %}

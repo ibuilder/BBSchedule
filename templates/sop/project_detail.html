@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}SOP Compliance - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">{{ project.name }}</h1>
+                    <p class="text-muted mb-0">SOP Compliance Details</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('sop_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Dashboard
+                    </a>
+                    <a href="{{ url_for('pull_plan_board', project_id=project.id) }}" class="btn btn-primary">
+                        <i data-feather="calendar" class="me-1"></i>
+                        Pull Plan Board
+                    </a>
+                </div>
+            </div>
+
+            <!-- Project Info Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-success">${{ "{:,.0f}".format(dashboard.project_info.contract_value) }}</h5>
+                            <small class="text-muted">Contract Value</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-info">{{ dashboard.project_info.project_size.replace('_', ' ').title() }}</h5>
+                            <small class="text-muted">Project Size</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-warning">{{ dashboard.activity_compliance.compliance_rate|round|int }}%</h5>
+                            <small class="text-muted">Activity Compliance</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-primary">{{ dashboard.reports_generated }}</h5>
+                            <small class="text-muted">Reports Generated</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Timeline Status -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="clock" class="me-2"></i>
+                                Schedule Development Timeline
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if timeline_status %}
+                                {% for item in timeline_status %}
+                                <div class="mb-4">
+                                    <h6 class="fw-medium">{{ item.schedule.schedule_type.value.replace('_', ' ').title() }} Schedule</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                                <span>Draft Phase</span>
+                                                <span class="badge {% if item.timeline.draft_phase.is_overdue %}bg-danger{% else %}bg-success{% endif %}">
+                                                    {% if item.timeline.draft_phase.is_overdue %}Overdue{% else %}On Track{% endif %}
+                                                </span>
+                                            </div>
+                                            {% if item.timeline.draft_phase.due_date %}
+                                            <small class="text-muted">Due: {{ item.timeline.draft_phase.due_date.strftime('%m/%d/%Y') }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                                <span>Review Phase</span>
+                                                <span class="badge {% if item.timeline.review_phase.superintendent_buyoff %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {% if item.timeline.review_phase.superintendent_buyoff %}Approved{% else %}Pending{% endif %}
+                                                </span>
+                                            </div>
+                                            {% if item.timeline.review_phase.due_date %}
+                                            <small class="text-muted">Due: {{ item.timeline.review_phase.due_date.strftime('%m/%d/%Y') }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                                                <span>Finalize Phase</span>
+                                                <span class="badge {% if item.timeline.finalize_phase.is_complete %}bg-success{% else %}bg-secondary{% endif %}">
+                                                    {% if item.timeline.finalize_phase.is_complete %}Complete{% else %}Pending{% endif %}
+                                                </span>
+                                            </div>
+                                            {% if item.timeline.finalize_phase.due_date %}
+                                            <small class="text-muted">Due: {{ item.timeline.finalize_phase.due_date.strftime('%m/%d/%Y') }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted">No schedules created yet</p>
+                                    <a href="{{ url_for('create_sop_schedule') }}" class="btn btn-primary">
+                                        Create SOP Schedule
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Compliance Details -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="check-square" class="me-2"></i>
+                                Activity Compliance Analysis
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <canvas id="complianceChart" width="400" height="200"></canvas>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i data-feather="check" class="text-success me-2" width="16" height="16"></i>
+                                                Compliant Activities
+                                            </span>
+                                            <span class="badge bg-success">{{ dashboard.activity_compliance.compliant }}</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i data-feather="hash" class="text-warning me-2" width="16" height="16"></i>
+                                                ID Violations (>5 chars)
+                                            </span>
+                                            <span class="badge bg-warning">{{ dashboard.activity_compliance.id_violations }}</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i data-feather="clock" class="text-danger me-2" width="16" height="16"></i>
+                                                Duration Violations (>15 days)
+                                            </span>
+                                            <span class="badge bg-danger">{{ dashboard.activity_compliance.duration_violations }}</span>
+                                        </div>
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i data-feather="calendar" class="text-info me-2" width="16" height="16"></i>
+                                                Missing Dates
+                                            </span>
+                                            <span class="badge bg-info">{{ dashboard.activity_compliance.date_violations }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Update Requirements -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="refresh-cw" class="me-2"></i>
+                                Update Requirements
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Scheduler Required</span>
+                                    <span class="badge {% if dashboard.update_compliance.scheduler_required %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if dashboard.update_compliance.scheduler_required %}Yes{% else %}No{% endif %}
+                                    </span>
+                                </div>
+                                <small class="text-muted">Projects >$10M require dedicated scheduler</small>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Update Deadline</span>
+                                    <span class="badge bg-info">{{ dashboard.update_compliance.update_deadline }}</span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Monthly Report Required</span>
+                                    <span class="badge bg-primary">Yes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="layers" class="me-2"></i>
+                                4D Modeling Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>4D Required</span>
+                                    <span class="badge {% if dashboard.schedule_compliance.requires_4d %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {% if dashboard.schedule_compliance.requires_4d %}Required{% else %}Not Required{% endif %}
+                                    </span>
+                                </div>
+                                <small class="text-muted">Vertical projects >2 levels</small>
+                            </div>
+                            {% if dashboard.schedule_compliance.requires_4d %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>4D Complete</span>
+                                    <span class="badge {% if dashboard.schedule_compliance.four_d_complete %}bg-success{% else %}bg-danger{% endif %}">
+                                        {% if dashboard.schedule_compliance.four_d_complete %}Complete{% else %}Pending{% endif %}
+                                    </span>
+                                </div>
+                                <small class="text-muted">1 week after initial P6 schedule</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Initialize Feather icons
+feather.replace();
+
+// Compliance Chart
+const ctx = document.getElementById('complianceChart').getContext('2d');
+const complianceChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Compliant', 'ID Violations', 'Duration Violations', 'Date Violations'],
+        datasets: [{
+            data: [
+                {{ dashboard.activity_compliance.compliant }},
+                {{ dashboard.activity_compliance.id_violations }},
+                {{ dashboard.activity_compliance.duration_violations }},
+                {{ dashboard.activity_compliance.date_violations }}
+            ],
+            backgroundColor: [
+                '#198754',
+                '#ffc107',
+                '#dc3545',
+                '#0dcaf0'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
