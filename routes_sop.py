@@ -1,11 +1,13 @@
 """
 SOP Compliance Routes for Carolinas Scheduling Requirements
+Enhanced with NCMoH real-world example
 """
 
 from flask import request, jsonify, render_template, redirect, url_for, flash
 from app import app
 from extensions import db
 from services.sop_compliance_service import sop_service
+from services.ncmoh_schedule_importer import ncmoh_importer
 from models_sop_compliance import (
     SOPSchedule, SOPActivity, Fragnet, SchedulerAssignment, 
     PullPlanBoard, ScheduleReport, ScheduleTemplate,
@@ -23,11 +25,25 @@ def sop_dashboard():
     # Get compliance summary for all projects
     compliance_summary = []
     for project in projects:
-        dashboard = sop_service.get_sop_compliance_dashboard(project.id)
-        compliance_summary.append({
-            'project': project,
-            'compliance': dashboard
-        })
+        try:
+            dashboard = sop_service.get_sop_compliance_dashboard(project.id)
+            compliance_summary.append({
+                'project': project,
+                'compliance': dashboard
+            })
+        except Exception as e:
+            # Handle projects without SOP data gracefully
+            compliance_summary.append({
+                'project': project,
+                'compliance': {
+                    'project_info': {'contract_value': 0, 'project_size': 'unknown'},
+                    'schedule_compliance': {'baseline_complete': False, 'requires_4d': False, 'four_d_complete': False},
+                    'activity_compliance': {'total': 0, 'compliant': 0, 'compliance_rate': 0, 'id_violations': 0, 'duration_violations': 0, 'date_violations': 0},
+                    'update_compliance': {'scheduler_required': False, 'update_deadline': 'Unknown'},
+                    'reports_generated': 0,
+                    'float_status': 'unknown'
+                }
+            })
     
     return render_template('sop/dashboard.html', 
                          compliance_summary=compliance_summary)
@@ -36,17 +52,32 @@ def sop_dashboard():
 def sop_project_detail(project_id):
     """Detailed SOP compliance for specific project"""
     project = Project.query.get_or_404(project_id)
-    dashboard = sop_service.get_sop_compliance_dashboard(project_id)
+    
+    try:
+        dashboard = sop_service.get_sop_compliance_dashboard(project_id)
+    except Exception as e:
+        # Default dashboard for projects without SOP data
+        dashboard = {
+            'project_info': {'contract_value': 0, 'project_size': 'unknown'},
+            'schedule_compliance': {'baseline_complete': False, 'requires_4d': False, 'four_d_complete': False},
+            'activity_compliance': {'total': 0, 'compliant': 0, 'compliance_rate': 0, 'id_violations': 0, 'duration_violations': 0, 'date_violations': 0},
+            'update_compliance': {'scheduler_required': False, 'update_deadline': 'Unknown'},
+            'reports_generated': 0,
+            'float_status': 'unknown'
+        }
     
     # Get schedule timeline status
     schedules = SOPSchedule.query.filter_by(project_id=project_id).all()
     timeline_status = []
     for schedule in schedules:
-        status = sop_service.check_schedule_development_timeline(schedule.id)
-        timeline_status.append({
-            'schedule': schedule,
-            'timeline': status
-        })
+        try:
+            status = sop_service.check_schedule_development_timeline(schedule.id)
+            timeline_status.append({
+                'schedule': schedule,
+                'timeline': status
+            })
+        except Exception as e:
+            pass
     
     return render_template('sop/project_detail.html', 
                          project=project,
@@ -95,6 +126,21 @@ def create_sop_schedule():
     return render_template('sop/create_schedule.html', 
                          projects=projects,
                          schedule_types=schedule_types)
+
+@app.route('/sop/import/ncmoh', methods=['POST'])
+def import_ncmoh_project():
+    """Import the NCMoH museum project as SOP example"""
+    try:
+        project = ncmoh_importer.import_project()
+        
+        flash(f'Successfully imported NCMoH project: {project.name}', 'success')
+        return jsonify({
+            'success': True,
+            'project_id': project.id,
+            'message': 'NCMoH Museum project imported successfully with full SOP compliance'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/sop/activity/validate', methods=['POST'])
 def validate_sop_activity():
@@ -250,35 +296,53 @@ def schedule_templates():
 @app.route('/api/sop/project/<int:project_id>/compliance')
 def api_sop_compliance(project_id):
     """API endpoint for SOP compliance data"""
-    dashboard = sop_service.get_sop_compliance_dashboard(project_id)
-    
-    return jsonify({
-        'success': True,
-        'project_id': project_id,
-        'compliance_data': dashboard
-    })
+    try:
+        dashboard = sop_service.get_sop_compliance_dashboard(project_id)
+        
+        return jsonify({
+            'success': True,
+            'project_id': project_id,
+            'compliance_data': dashboard
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/sop/float-status/<int:schedule_id>')
 def api_float_status(schedule_id):
     """API endpoint for float status"""
-    float_status = sop_service.update_schedule_float_status(schedule_id)
-    
-    return jsonify({
-        'success': True,
-        'schedule_id': schedule_id,
-        'float_status': float_status.value if float_status else 'unknown'
-    })
+    try:
+        float_status = sop_service.update_schedule_float_status(schedule_id)
+        
+        return jsonify({
+            'success': True,
+            'schedule_id': schedule_id,
+            'float_status': float_status.value if float_status else 'unknown'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/sop/monthly-validation/<int:project_id>')
 def api_monthly_validation(project_id):
     """API endpoint for monthly update validation"""
-    validation = sop_service.validate_monthly_update_requirements(project_id)
-    
-    return jsonify({
-        'success': True,
-        'project_id': project_id,
-        'validation': validation
-    })
+    try:
+        validation = sop_service.validate_monthly_update_requirements(project_id)
+        
+        return jsonify({
+            'success': True,
+            'project_id': project_id,
+            'validation': validation
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 # SOP Workflow endpoints
 @app.route('/sop/workflow/<int:project_id>/<schedule_type>')
@@ -307,3 +371,32 @@ def sop_workflow(project_id, schedule_type):
                          workflow_steps=workflow_steps.get(schedule_type, []),
                          current_schedule=current_schedule,
                          timeline_status=timeline_status)
+
+@app.route('/sop/demo/ncmoh')
+def ncmoh_demo():
+    """NCMoH Museum project demo page"""
+    # Check if NCMoH project exists
+    ncmoh_project = Project.query.filter(
+        Project.name.contains('NC Museum of History')
+    ).first()
+    
+    if not ncmoh_project:
+        return render_template('sop/ncmoh_demo.html', project=None)
+    
+    # Get comprehensive compliance data
+    compliance_data = ncmoh_importer.get_sop_compliance_summary(ncmoh_project.id)
+    
+    # Get SOP schedules
+    sop_schedules = SOPSchedule.query.filter_by(project_id=ncmoh_project.id).all()
+    
+    # Get SOP activities
+    sop_activities = []
+    for schedule in sop_schedules:
+        activities = SOPActivity.query.filter_by(schedule_id=schedule.id).all()
+        sop_activities.extend(activities)
+    
+    return render_template('sop/ncmoh_demo.html',
+                         project=ncmoh_project,
+                         compliance_data=compliance_data,
+                         sop_schedules=sop_schedules,
+                         sop_activities=sop_activities[:20])  # Show first 20 activities

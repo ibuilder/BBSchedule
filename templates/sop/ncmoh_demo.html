@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}NCMoH Museum Project - SOP Demo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i data-feather="museum" class="me-2"></i>
+                        NC Museum of History - SOP Compliance Demo
+                    </h1>
+                    <p class="text-muted mb-0">Real-world schedule implementation following Carolinas Scheduling SOP</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('sop_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        SOP Dashboard
+                    </a>
+                    {% if not project %}
+                    <button type="button" class="btn btn-success" onclick="importNCMoHProject()">
+                        <i data-feather="download" class="me-1"></i>
+                        Import NCMoH Project
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if not project %}
+            <!-- Import NCMoH Project -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="info" class="me-2"></i>
+                                Import Real-World SOP Example
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 class="fw-medium">NC Museum of History Renovation & Expansion</h6>
+                                    <p class="mb-3">
+                                        This project demonstrates complete SOP compliance using real schedule data from the 
+                                        NC Museum of History renovation project. The schedule includes:
+                                    </p>
+                                    <ul class="list-unstyled">
+                                        <li><i data-feather="check" class="text-success me-2" width="16" height="16"></i> Multi-phase bidding process (GMP #2 and #3)</li>
+                                        <li><i data-feather="check" class="text-success me-2" width="16" height="16"></i> Complex structural work with micro piles and FRP columns</li>
+                                        <li><i data-feather="check" class="text-success me-2" width="16" height="16"></i> Historic preservation requirements</li>
+                                        <li><i data-feather="check" class="text-success me-2" width="16" height="16"></i> SOP-compliant activity IDs (≤5 characters)</li>
+                                        <li><i data-feather="check" class="text-success me-2" width="16" height="16"></i> Duration compliance (≤15 days per activity)</li>
+                                        <li><i data-feather="check" class="text-success me-2" width="16" height="16"></i> 4D modeling requirements (multi-level structure)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <h3 class="text-success">$75M</h3>
+                                            <p class="mb-2">Contract Value</p>
+                                            <h4 class="text-info">2.6 Years</h4>
+                                            <p class="mb-2">Project Duration</p>
+                                            <h5 class="text-warning">150K SF</h5>
+                                            <p class="mb-0">Museum Space</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <button type="button" class="btn btn-success btn-lg" onclick="importNCMoHProject()">
+                                    <i data-feather="download" class="me-2"></i>
+                                    Import NCMoH Museum Project with SOP Compliance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Project Overview -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">Project Overview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-medium">{{ project.name }}</h6>
+                                    <p class="text-muted">{{ project.description }}</p>
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <small class="text-muted">Location:</small><br>
+                                            <strong>{{ project.location }}</strong>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <small class="text-muted">Duration:</small><br>
+                                            <strong>{{ project.start_date.strftime('%m/%d/%Y') }} - {{ project.end_date.strftime('%m/%d/%Y') }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="border rounded p-2">
+                                                <h5 class="text-success mb-0">${{ "{:,.0f}".format(project.budget) }}</h5>
+                                                <small class="text-muted">Budget</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="border rounded p-2">
+                                                <h5 class="text-info mb-0">{{ project.floor_count }}</h5>
+                                                <small class="text-muted">Levels</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="border rounded p-2">
+                                                <h5 class="text-warning mb-0">{{ "{:,.0f}".format(project.total_sf) }}</h5>
+                                                <small class="text-muted">Sq Ft</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOP Compliance Status -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success text-white rounded p-2 me-3">
+                                    <i data-feather="check-circle" width="24" height="24"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">SOP Compliant</h6>
+                                    <small class="text-muted">Schedule Development</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning text-white rounded p-2 me-3">
+                                    <i data-feather="layers" width="24" height="24"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">4D Required</h6>
+                                    <small class="text-muted">Multi-level Structure</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-info text-white rounded p-2 me-3">
+                                    <i data-feather="user" width="24" height="24"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Senior Scheduler</h6>
+                                    <small class="text-muted">$75M Project</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOP Schedules -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="calendar" class="me-2"></i>
+                                SOP Schedule Phases
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if sop_schedules %}
+                            <div class="row">
+                                {% for schedule in sop_schedules %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-secondary">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="card-title">{{ schedule.schedule_type.value.replace('_', ' ').title() }} Schedule</h6>
+                                                    <small class="text-muted">
+                                                        Phase: {{ schedule.phase.value.title() }}
+                                                        {% if schedule.requires_4d %}
+                                                        <span class="badge bg-warning ms-2">4D Required</span>
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                                <div class="text-end">
+                                                    {% if schedule.baseline_complete %}
+                                                    <span class="badge bg-success">Complete</span>
+                                                    {% else %}
+                                                    <span class="badge bg-warning">In Progress</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% if schedule.draft_due_date %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">Timeline:</small><br>
+                                                <small>
+                                                    Draft: {{ schedule.draft_due_date.strftime('%m/%d/%Y') }}
+                                                    {% if schedule.review_due_date %}
+                                                    | Review: {{ schedule.review_due_date.strftime('%m/%d/%Y') }}
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No SOP schedules created yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sample Activities -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="list" class="me-2"></i>
+                                Sample SOP-Compliant Activities
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if sop_activities %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Activity Name</th>
+                                            <th>Duration</th>
+                                            <th>Start Date</th>
+                                            <th>SOP Compliance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for activity in sop_activities %}
+                                        <tr>
+                                            <td>
+                                                <code>{{ activity.activity_id }}</code>
+                                                {% if activity.is_valid_id %}
+                                                <i data-feather="check" class="text-success ms-1" width="12" height="12"></i>
+                                                {% else %}
+                                                <i data-feather="x" class="text-danger ms-1" width="12" height="12"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ activity.name }}</td>
+                                            <td>
+                                                {{ activity.duration }}d
+                                                {% if activity.is_valid_duration %}
+                                                <i data-feather="check" class="text-success ms-1" width="12" height="12"></i>
+                                                {% else %}
+                                                <i data-feather="x" class="text-danger ms-1" width="12" height="12"></i>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if activity.planned_start %}
+                                                {{ activity.planned_start.strftime('%m/%d/%Y') }}
+                                                {% else %}
+                                                <span class="text-muted">TBD</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if activity.is_valid_id and activity.is_valid_duration and activity.has_populated_dates %}
+                                                <span class="badge bg-success">Compliant</span>
+                                                {% else %}
+                                                <span class="badge bg-warning">Review Required</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No activities available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{{ url_for('sop_project_detail', project_id=project.id) }}" class="btn btn-primary">
+                            <i data-feather="eye" class="me-1"></i>
+                            View Full Compliance Details
+                        </a>
+                        <a href="{{ url_for('pull_plan_board', project_id=project.id) }}" class="btn btn-secondary">
+                            <i data-feather="calendar" class="me-1"></i>
+                            Pull Planning Board
+                        </a>
+                        <a href="{{ url_for('sop_reports', project_id=project.id) }}" class="btn btn-info">
+                            <i data-feather="file-text" class="me-1"></i>
+                            SOP Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+function importNCMoHProject() {
+    const button = document.querySelector('button[onclick="importNCMoHProject()"]');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i data-feather="loader" class="me-2"></i>Importing...';
+    button.disabled = true;
+    
+    fetch('/sop/import/ncmoh', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            alert('NCMoH Museum project imported successfully with full SOP compliance!');
+            // Reload page to show the imported project
+            window.location.reload();
+        } else {
+            alert('Error importing project: ' + data.error);
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error importing project');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+</script>
+{% endblock %}

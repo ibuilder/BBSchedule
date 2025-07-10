@@ -88,10 +88,10 @@ class SOPSchedule(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships (using backref instead of back_populates for compatibility)
-    project = relationship("Project", backref="sop_schedules")
-    activities = relationship("SOPActivity", backref="schedule")
-    fragnets = relationship("Fragnet", backref="schedule")
+    # Relationships
+    project = relationship("Project")
+    activities = relationship("SOPActivity", back_populates="schedule", cascade="all, delete-orphan")
+    fragnets = relationship("Fragnet", back_populates="schedule", cascade="all, delete-orphan")
     
     def calculate_float_status(self):
         """Calculate float status per SOP requirements"""
@@ -142,7 +142,7 @@ class SOPActivity(db.Model):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    schedule = relationship("SOPSchedule", backref="activities")
+    schedule = relationship("SOPSchedule", back_populates="activities")
     
     def validate_sop_compliance(self):
         """Validate activity meets SOP requirements"""
@@ -183,7 +183,7 @@ class Fragnet(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    schedule = relationship("SOPSchedule", backref="fragnets")
+    schedule = relationship("SOPSchedule", back_populates="fragnets")
 
 class SchedulerAssignment(db.Model):
     """Scheduler assignments per SOP workload requirements"""
