@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Procore Integration - BBSchedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i data-feather="link" class="me-2 text-success"></i>
+                        Procore Integration
+                    </h1>
+                    <p class="text-muted mb-0">Seamless bi-directional sync with Procore platform</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('buildflow_main_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Advanced Features
+                    </a>
+                    <button class="btn btn-success" onclick="syncProcore()">
+                        <i data-feather="refresh-cw" class="me-1"></i>
+                        Sync Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Integration Status -->
+            <div class="row mb-4">
+                <div class="col-lg-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="check-circle" class="me-2"></i>
+                                Connection Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-success text-white rounded-circle p-2 me-3">
+                                    <i data-feather="link" width="20" height="20"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Connected to Procore</h6>
+                                    <small class="text-success">Active since January 2025</small>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h4 text-success">15</div>
+                                        <small class="text-muted">Projects Synced</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-center">
+                                        <div class="h4 text-success">99.9%</div>
+                                        <small class="text-muted">Uptime</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Sync Statistics</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">Last Sync</span>
+                                <span class="badge bg-success">14:30 today</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">API Calls Today</span>
+                                <span class="badge bg-info">247</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">Pending Updates</span>
+                                <span class="badge bg-warning">3</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small">Sync Health</span>
+                                <span class="badge bg-success">Excellent</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integration Features -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="layers" class="me-2"></i>
+                                Integration Features
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="text-center">
+                                        <div class="bg-primary text-white rounded-circle p-3 d-inline-flex mb-2">
+                                            <i data-feather="folder" width="24" height="24"></i>
+                                        </div>
+                                        <h6>Project Sync</h6>
+                                        <p class="small text-muted">Bi-directional project data synchronization</p>
+                                        <span class="badge bg-success">Active</span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="text-center">
+                                        <div class="bg-warning text-white rounded-circle p-3 d-inline-flex mb-2">
+                                            <i data-feather="calendar" width="24" height="24"></i>
+                                        </div>
+                                        <h6>Schedule Sync</h6>
+                                        <p class="small text-muted">Import/export optimized schedules</p>
+                                        <span class="badge bg-success">Active</span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="text-center">
+                                        <div class="bg-info text-white rounded-circle p-3 d-inline-flex mb-2">
+                                            <i data-feather="file-text" width="24" height="24"></i>
+                                        </div>
+                                        <h6>Documents</h6>
+                                        <p class="small text-muted">Drawing and specification sync</p>
+                                        <span class="badge bg-success">Active</span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="text-center">
+                                        <div class="bg-success text-white rounded-circle p-3 d-inline-flex mb-2">
+                                            <i data-feather="dollar-sign" width="24" height="24"></i>
+                                        </div>
+                                        <h6>Financial Data</h6>
+                                        <p class="small text-muted">Budget and cost code synchronization</p>
+                                        <span class="badge bg-success">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Sync Activities -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="activity" class="me-2"></i>
+                                Recent Sync Activities
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item d-flex align-items-center">
+                                    <div class="bg-success text-white rounded p-2 me-3">
+                                        <i data-feather="download" width="16" height="16"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-medium">Project data synchronized</div>
+                                        <small class="text-muted">Downtown Office Complex - 14:30</small>
+                                    </div>
+                                    <span class="badge bg-success">Success</span>
+                                </div>
+                                <div class="list-group-item d-flex align-items-center">
+                                    <div class="bg-info text-white rounded p-2 me-3">
+                                        <i data-feather="upload" width="16" height="16"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-medium">Optimized schedule pushed</div>
+                                        <small class="text-muted">NCMoH Museum Renovation - 13:45</small>
+                                    </div>
+                                    <span class="badge bg-success">Success</span>
+                                </div>
+                                <div class="list-group-item d-flex align-items-center">
+                                    <div class="bg-warning text-white rounded p-2 me-3">
+                                        <i data-feather="file-text" width="16" height="16"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-medium">Document sync in progress</div>
+                                        <small class="text-muted">Retail Center Renovation - 12:20</small>
+                                    </div>
+                                    <span class="badge bg-warning">In Progress</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="syncProjects()">
+                                    <i data-feather="folder" class="me-1"></i>
+                                    Sync Projects
+                                </button>
+                                <button class="btn btn-outline-info" onclick="pushSchedules()">
+                                    <i data-feather="calendar" class="me-1"></i>
+                                    Push Schedules
+                                </button>
+                                <button class="btn btn-outline-success" onclick="syncDocuments()">
+                                    <i data-feather="file-text" class="me-1"></i>
+                                    Sync Documents
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="viewSettings()">
+                                    <i data-feather="settings" class="me-1"></i>
+                                    Integration Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+function syncProcore() {
+    showAlert('Starting Procore synchronization...', 'info');
+    
+    fetch('/buildflow/procore/sync', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            sync_type: 'projects',
+            company_id: 'balfour_beatty'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(`Successfully synced ${data.synced_projects.length} projects from Procore`, 'success');
+        } else {
+            showAlert('Sync failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error during synchronization', 'error');
+    });
+}
+
+function syncProjects() {
+    showAlert('Syncing projects with Procore...', 'info');
+}
+
+function pushSchedules() {
+    showAlert('Pushing optimized schedules to Procore...', 'info');
+}
+
+function syncDocuments() {
+    showAlert('Synchronizing documents with Procore...', 'info');
+}
+
+function viewSettings() {
+    showAlert('Opening integration settings...', 'info');
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

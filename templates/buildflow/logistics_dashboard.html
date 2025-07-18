@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery & Logistics - BBSchedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i data-feather="truck" class="me-2 text-info"></i>
+                        Delivery & Logistics Management
+                    </h1>
+                    <p class="text-muted mb-0">Real-time tracking and site logistics optimization</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('buildflow_main_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Advanced Features
+                    </a>
+                    <button class="btn btn-info" onclick="scheduleNewDelivery()">
+                        <i data-feather="plus" class="me-1"></i>
+                        Schedule Delivery
+                    </button>
+                </div>
+            </div>
+
+            <!-- Logistics Metrics -->
+            <div class="row mb-4">
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <div class="text-info mb-2">
+                                <i data-feather="calendar" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.scheduled_deliveries }}</h4>
+                            <small class="text-muted">Scheduled</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <div class="text-warning mb-2">
+                                <i data-feather="truck" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.in_transit }}</h4>
+                            <small class="text-muted">In Transit</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <div class="text-success mb-2">
+                                <i data-feather="check-circle" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.completed_today }}</h4>
+                            <small class="text-muted">Completed Today</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-danger">
+                        <div class="card-body text-center">
+                            <div class="text-danger mb-2">
+                                <i data-feather="alert-circle" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.delayed_shipments }}</h4>
+                            <small class="text-muted">Delayed</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <div class="text-primary mb-2">
+                                <i data-feather="clock" width="32" height="32"></i>
+                            </div>
+                            <h5 class="mb-0">{{ summary.avg_delivery_time }}</h5>
+                            <small class="text-muted">Avg Time</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <div class="text-success mb-2">
+                                <i data-feather="target" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.on_time_percentage }}</h4>
+                            <small class="text-muted">On-Time Rate</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-Time Tracking -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="map" class="me-2"></i>
+                                Real-Time Delivery Tracking
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="delivery-tracking-container">
+                                <!-- Simulated tracking data -->
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card bg-light border-0">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="bg-warning text-white rounded p-2 me-3">
+                                                        <i data-feather="truck" width="20" height="20"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">Structural Steel Beams</h6>
+                                                        <small class="text-muted">DEL_20250718143001</small>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <span class="badge bg-warning">In Transit</span>
+                                                    <span class="badge bg-info ms-1">ETA: 16:30</span>
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <i data-feather="map-pin" width="14" height="14" class="me-1"></i>
+                                                    Highway 401, Exit 47 - 12 miles away
+                                                </div>
+                                                <button class="btn btn-outline-primary btn-sm mt-2" onclick="trackDelivery('DEL_20250718143001')">
+                                                    <i data-feather="external-link" width="14" height="14" class="me-1"></i>
+                                                    Track Live
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card bg-light border-0">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="bg-success text-white rounded p-2 me-3">
+                                                        <i data-feather="check-circle" width="20" height="20"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">Ready-Mix Concrete</h6>
+                                                        <small class="text-muted">DEL_20250718143002</small>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <span class="badge bg-success">Delivered</span>
+                                                    <span class="badge bg-secondary ms-1">14:15</span>
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <i data-feather="user" width="14" height="14" class="me-1"></i>
+                                                    Signed by: J.Smith - Site Supervisor
+                                                </div>
+                                                <button class="btn btn-outline-success btn-sm mt-2" onclick="viewDeliveryDetails('DEL_20250718143002')">
+                                                    <i data-feather="file-text" width="14" height="14" class="me-1"></i>
+                                                    View Receipt
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="navigation" class="me-1"></i>
+                                Route Optimization
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-success text-white rounded p-2 me-3">
+                                    <i data-feather="trending-down" width="20" height="20"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">$12,000 Saved</h6>
+                                    <small class="text-muted">Route optimization this month</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-info text-white rounded p-2 me-3">
+                                    <i data-feather="clock" width="20" height="20"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">18% Faster</h6>
+                                    <small class="text-muted">Average delivery time improvement</small>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning text-white rounded p-2 me-3">
+                                    <i data-feather="cpu" width="20" height="20"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">AI Optimized</h6>
+                                    <small class="text-muted">All routes optimized automatically</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Schedule -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i data-feather="calendar" class="me-2"></i>
+                                    Delivery Schedule
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select form-select-sm" onchange="filterByStatus(this.value)">
+                                        <option value="">All Status</option>
+                                        <option value="scheduled">Scheduled</option>
+                                        <option value="in_transit">In Transit</option>
+                                        <option value="delivered">Delivered</option>
+                                        <option value="delayed">Delayed</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="refreshDeliveryData()">
+                                        <i data-feather="refresh-cw" class="me-1"></i>
+                                        Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="delivery-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Delivery ID</th>
+                                            <th>Material</th>
+                                            <th>Supplier</th>
+                                            <th>Scheduled Date</th>
+                                            <th>Status</th>
+                                            <th>Location</th>
+                                            <th>Driver Contact</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="delivery-table-body">
+                                        <!-- Data will be loaded via JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Delivery Modal -->
+<div class="modal fade" id="scheduleDeliveryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-feather="truck" class="me-2"></i>
+                    Schedule New Delivery
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="delivery-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Procurement Item</label>
+                                <select class="form-select" required>
+                                    <option value="">Select item...</option>
+                                    <option value="PROC_20250718143001">Structural Steel Beams</option>
+                                    <option value="PROC_20250718143002">Ready-Mix Concrete</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Scheduled Date</label>
+                                <input type="datetime-local" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Delivery Window</label>
+                                <select class="form-select">
+                                    <option>8:00 AM - 12:00 PM</option>
+                                    <option>12:00 PM - 4:00 PM</option>
+                                    <option>4:00 PM - 8:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Site Location</label>
+                                <select class="form-select">
+                                    <option>Main Entrance - Zone A</option>
+                                    <option>North Gate - Zone B</option>
+                                    <option>Service Road - Zone C</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Special Instructions</label>
+                        <textarea class="form-control" rows="3" placeholder="Crane coordination, safety requirements, etc."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info" onclick="submitDeliverySchedule()">
+                    <i data-feather="calendar" class="me-1"></i>
+                    Schedule Delivery
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+// Load delivery data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDeliveryData();
+});
+
+function loadDeliveryData() {
+    const tableBody = document.getElementById('delivery-table-body');
+    
+    // Show loading state
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center py-4">
+                <i data-feather="loader" class="me-2"></i>
+                Loading delivery data...
+            </td>
+        </tr>
+    `;
+    feather.replace();
+    
+    // Fetch data from API
+    fetch('/api/buildflow/deliveries/tracking')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayDeliveryData(data.deliveries);
+            } else {
+                showError('Error loading delivery data');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error loading delivery data');
+        });
+}
+
+function displayDeliveryData(deliveries) {
+    const tableBody = document.getElementById('delivery-table-body');
+    
+    if (deliveries.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-4 text-muted">
+                    No deliveries scheduled
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tableBody.innerHTML = deliveries.map(delivery => `
+        <tr>
+            <td><code>${delivery.id}</code></td>
+            <td>${delivery.procurement_item}</td>
+            <td>Steel Supply Co</td>
+            <td>${delivery.estimated_arrival || 'TBD'}</td>
+            <td>
+                <span class="badge ${getStatusBadgeClass(delivery.status)}">${delivery.status.replace('_', ' ')}</span>
+            </td>
+            <td>${delivery.current_location || 'Site Location A'}</td>
+            <td>
+                ${delivery.driver_contact ? `<a href="tel:${delivery.driver_contact}">${delivery.driver_contact}</a>` : 'TBD'}
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" onclick="trackDelivery('${delivery.id}')" title="Track">
+                        <i data-feather="map-pin" width="14" height="14"></i>
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="viewDeliveryDetails('${delivery.id}')" title="Details">
+                        <i data-feather="eye" width="14" height="14"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+    
+    feather.replace();
+}
+
+function getStatusBadgeClass(status) {
+    const statusClasses = {
+        'scheduled': 'bg-info',
+        'in_transit': 'bg-warning',
+        'delivered': 'bg-success',
+        'delayed': 'bg-danger'
+    };
+    return statusClasses[status] || 'bg-secondary';
+}
+
+function scheduleNewDelivery() {
+    const modal = new bootstrap.Modal(document.getElementById('scheduleDeliveryModal'));
+    modal.show();
+}
+
+function submitDeliverySchedule() {
+    const form = document.getElementById('delivery-form');
+    const formData = new FormData(form);
+    
+    // Here you would normally submit to the API
+    showAlert('Delivery scheduled successfully with optimized logistics!', 'success');
+    
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('scheduleDeliveryModal')).hide();
+    
+    // Refresh data
+    setTimeout(() => {
+        loadDeliveryData();
+    }, 1000);
+}
+
+function trackDelivery(deliveryId) {
+    showAlert(`Opening live tracking for delivery ${deliveryId}...`, 'info');
+}
+
+function viewDeliveryDetails(deliveryId) {
+    showAlert(`Viewing details for delivery ${deliveryId}...`, 'info');
+}
+
+function filterByStatus(status) {
+    // Filter deliveries by status
+    console.log('Filtering by status:', status);
+}
+
+function refreshDeliveryData() {
+    loadDeliveryData();
+}
+
+function showError(message) {
+    const tableBody = document.getElementById('delivery-table-body');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center py-4 text-danger">
+                <i data-feather="alert-circle" class="me-2"></i>
+                ${message}
+            </td>
+        </tr>
+    `;
+    feather.replace();
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

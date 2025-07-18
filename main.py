@@ -6,6 +6,7 @@ Production-ready construction project scheduling platform
 import os
 import logging
 from app import app
+import routes_buildflow  # noqa: F401
 
 # Configure production logging
 if not app.debug:

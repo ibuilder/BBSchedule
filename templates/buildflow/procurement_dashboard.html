@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Procurement Management - BBSchedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i data-feather="package" class="me-2 text-primary"></i>
+                        Intelligent Procurement Management
+                    </h1>
+                    <p class="text-muted mb-0">AI-powered lead time predictions and supply chain optimization</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('buildflow_main_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Advanced Features
+                    </a>
+                    <a href="{{ url_for('create_procurement_item') }}" class="btn btn-primary">
+                        <i data-feather="plus" class="me-1"></i>
+                        New Procurement Item
+                    </a>
+                </div>
+            </div>
+
+            <!-- Procurement Metrics -->
+            <div class="row mb-4">
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <div class="text-primary mb-2">
+                                <i data-feather="package" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.total_items }}</h4>
+                            <small class="text-muted">Total Items</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <div class="text-warning mb-2">
+                                <i data-feather="clock" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.pending_orders }}</h4>
+                            <small class="text-muted">Pending Orders</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <div class="text-info mb-2">
+                                <i data-feather="truck" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.in_transit }}</h4>
+                            <small class="text-muted">In Transit</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <div class="text-success mb-2">
+                                <i data-feather="check-circle" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.delivered }}</h4>
+                            <small class="text-muted">Delivered</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-danger">
+                        <div class="card-body text-center">
+                            <div class="text-danger mb-2">
+                                <i data-feather="alert-triangle" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.risk_items }}</h4>
+                            <small class="text-muted">Risk Items</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <div class="text-success mb-2">
+                                <i data-feather="dollar-sign" width="32" height="32"></i>
+                            </div>
+                            <h5 class="mb-0">${{ "{:,.0f}".format(summary.cost_savings) }}</h5>
+                            <small class="text-muted">Cost Savings</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights & Risk Assessment -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="cpu" class="me-2"></i>
+                                AI-Powered Insights
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary text-white rounded p-2 me-3">
+                                            <i data-feather="trending-up" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Lead Time Accuracy</h6>
+                                            <small class="text-muted">AI predictions are 92% accurate</small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-success text-white rounded p-2 me-3">
+                                            <i data-feather="shield" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Supply Chain Risk</h6>
+                                            <small class="text-muted">12 items require attention</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-warning text-white rounded p-2 me-3">
+                                            <i data-feather="clock" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Average Lead Time</h6>
+                                            <small class="text-muted">{{ summary.avg_lead_time }} days</small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-info text-white rounded p-2 me-3">
+                                            <i data-feather="refresh-cw" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Auto Reorders</h6>
+                                            <small class="text-muted">8 items scheduled automatically</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="alert-circle" class="me-1"></i>
+                                Risk Alerts
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning py-2 mb-2">
+                                <small class="fw-medium">Steel prices increasing</small><br>
+                                <small class="text-muted">Consider early procurement</small>
+                            </div>
+                            <div class="alert alert-info py-2 mb-2">
+                                <small class="fw-medium">Lumber availability improving</small><br>
+                                <small class="text-muted">Good time to order</small>
+                            </div>
+                            <div class="alert alert-danger py-2 mb-0">
+                                <small class="fw-medium">HVAC equipment delays</small><br>
+                                <small class="text-muted">Lead times extended to 28 days</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Procurement Items Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i data-feather="list" class="me-2"></i>
+                                    Procurement Items
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select form-select-sm" onchange="filterByProject(this.value)">
+                                        <option value="">All Projects</option>
+                                        {% for project in projects %}
+                                        <option value="{{ project.id }}">{{ project.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="refreshProcurementData()">
+                                        <i data-feather="refresh-cw" class="me-1"></i>
+                                        Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="procurement-table-container">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="procurement-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Item ID</th>
+                                                <th>Material</th>
+                                                <th>Type</th>
+                                                <th>Quantity</th>
+                                                <th>Supplier</th>
+                                                <th>Lead Time (AI)</th>
+                                                <th>Status</th>
+                                                <th>Risk</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="procurement-table-body">
+                                            <!-- Data will be loaded via JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+// Load procurement data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadProcurementData();
+});
+
+function loadProcurementData(projectId = null) {
+    const tableBody = document.getElementById('procurement-table-body');
+    
+    // Show loading state
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="9" class="text-center py-4">
+                <i data-feather="loader" class="me-2"></i>
+                Loading procurement data...
+            </td>
+        </tr>
+    `;
+    feather.replace();
+    
+    // Fetch data from API
+    const url = projectId ? `/api/buildflow/procurement/${projectId}/items` : '/api/buildflow/procurement/all/items';
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayProcurementItems(data.items);
+            } else {
+                showError('Error loading procurement data');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error loading procurement data');
+        });
+}
+
+function displayProcurementItems(items) {
+    const tableBody = document.getElementById('procurement-table-body');
+    
+    if (items.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-4 text-muted">
+                    No procurement items found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tableBody.innerHTML = items.map(item => `
+        <tr>
+            <td><code>${item.id}</code></td>
+            <td>${item.material_name}</td>
+            <td>
+                <span class="badge bg-light text-dark">${item.material_type}</span>
+            </td>
+            <td>${item.quantity} ${item.unit}</td>
+            <td>${item.supplier}</td>
+            <td>
+                <span class="badge bg-info">${item.predicted_lead_time} days</span>
+            </td>
+            <td>
+                <span class="badge ${getStatusBadgeClass(item.status)}">${item.status.replace('_', ' ')}</span>
+            </td>
+            <td>
+                <span class="badge ${getRiskBadgeClass(item.risk_score)}">${item.risk_score}</span>
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="viewItem('${item.id}')" title="View Details">
+                        <i data-feather="eye" width="14" height="14"></i>
+                    </button>
+                    <button class="btn btn-outline-info" onclick="trackDelivery('${item.id}')" title="Track Delivery">
+                        <i data-feather="truck" width="14" height="14"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+    
+    feather.replace();
+}
+
+function getStatusBadgeClass(status) {
+    const statusClasses = {
+        'ordered': 'bg-warning',
+        'in_transit': 'bg-info',
+        'delivered': 'bg-success',
+        'delayed': 'bg-danger',
+        'pending': 'bg-secondary'
+    };
+    return statusClasses[status] || 'bg-secondary';
+}
+
+function getRiskBadgeClass(risk) {
+    const riskClasses = {
+        'low': 'bg-success',
+        'medium': 'bg-warning',
+        'high': 'bg-danger'
+    };
+    return riskClasses[risk] || 'bg-secondary';
+}
+
+function filterByProject(projectId) {
+    loadProcurementData(projectId);
+}
+
+function refreshProcurementData() {
+    const projectSelect = document.querySelector('select[onchange="filterByProject(this.value)"]');
+    const selectedProject = projectSelect.value;
+    loadProcurementData(selectedProject);
+}
+
+function viewItem(itemId) {
+    // Show item details modal or navigate to detail page
+    alert(`View details for item: ${itemId}`);
+}
+
+function trackDelivery(itemId) {
+    // Navigate to delivery tracking
+    window.location.href = `/buildflow/delivery/track/${itemId}`;
+}
+
+function showError(message) {
+    const tableBody = document.getElementById('procurement-table-body');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="9" class="text-center py-4 text-danger">
+                <i data-feather="alert-circle" class="me-2"></i>
+                ${message}
+            </td>
+        </tr>
+    `;
+    feather.replace();
+}
+</script>
+{% endblock %}

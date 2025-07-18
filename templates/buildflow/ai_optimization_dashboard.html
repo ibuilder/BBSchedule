@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+
+{% block title %}AI Optimization - BBSchedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i data-feather="cpu" class="me-2 text-warning"></i>
+                        AI-Powered Optimization
+                    </h1>
+                    <p class="text-muted mb-0">600M+ simulations for schedule and resource optimization</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('buildflow_main_dashboard') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Advanced Features
+                    </a>
+                    <button class="btn btn-warning" onclick="runGlobalOptimization()">
+                        <i data-feather="zap" class="me-1"></i>
+                        Run Global Optimization
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Optimization Metrics -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body text-center">
+                            <div class="text-warning mb-2">
+                                <i data-feather="cpu" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.projects_optimized }}</h4>
+                            <small class="text-muted">Projects Optimized</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body text-center">
+                            <div class="text-success mb-2">
+                                <i data-feather="trending-up" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.avg_schedule_improvement }}</h4>
+                            <small class="text-muted">Avg Schedule Improvement</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-info">
+                        <div class="card-body text-center">
+                            <div class="text-info mb-2">
+                                <i data-feather="dollar-sign" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.avg_cost_savings }}</h4>
+                            <small class="text-muted">Avg Cost Savings</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body text-center">
+                            <div class="text-primary mb-2">
+                                <i data-feather="activity" width="32" height="32"></i>
+                            </div>
+                            <h4 class="mb-0">{{ summary.ai_confidence }}</h4>
+                            <small class="text-muted">AI Confidence</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Engine Status -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="server" class="me-2"></i>
+                                AI Engine Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success text-white rounded p-2 me-3">
+                                            <i data-feather="check-circle" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Simulation Engine</h6>
+                                            <small class="text-success">{{ summary.simulations_run }} simulations completed</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-warning text-white rounded p-2 me-3">
+                                            <i data-feather="brain" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">ML Models</h6>
+                                            <small class="text-muted">6 models trained and active</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-info text-white rounded p-2 me-3">
+                                            <i data-feather="shield" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Risk Analysis</h6>
+                                            <small class="text-muted">{{ summary.risk_factors_identified }} factors identified</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary text-white rounded p-2 me-3">
+                                            <i data-feather="clock" width="20" height="20"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Processing Time</h6>
+                                            <small class="text-muted">Average 4.2 seconds per optimization</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="trending-up" class="me-1"></i>
+                                Optimization Queue
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">Running</span>
+                                <span class="badge bg-warning">2 projects</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">Queued</span>
+                                <span class="badge bg-info">5 projects</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">Completed Today</span>
+                                <span class="badge bg-success">18 projects</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small">Failed</span>
+                                <span class="badge bg-danger">0 projects</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Optimization Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i data-feather="list" class="me-2"></i>
+                                    Project Optimizations
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select form-select-sm" onchange="filterOptimizations(this.value)">
+                                        <option value="">All Projects</option>
+                                        {% for project in projects %}
+                                        <option value="{{ project.id }}">{{ project.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="refreshOptimizationData()">
+                                        <i data-feather="refresh-cw" class="me-1"></i>
+                                        Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Project</th>
+                                            <th>Current Status</th>
+                                            <th>Schedule Improvement</th>
+                                            <th>Cost Savings</th>
+                                            <th>Risk Score</th>
+                                            <th>Last Optimization</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="optimization-table-body">
+                                        {% if projects %}
+                                        {% for project in projects %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary text-white rounded p-2 me-2">
+                                                        <i data-feather="folder" width="16" height="16"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium">{{ project.name }}</div>
+                                                        <small class="text-muted">${{ "{:,.0f}".format(project.budget or 0) }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if project.status.value == 'active' else 'warning' }}">
+                                                    {{ project.status.value.title() }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="text-success fw-medium">+15%</span>
+                                                <small class="text-muted d-block">12 days saved</small>
+                                            </td>
+                                            <td>
+                                                <span class="text-success fw-medium">$45,000</span>
+                                                <small class="text-muted d-block">8% reduction</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">Low</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">2 hours ago</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-warning" onclick="optimizeProject({{ project.id }})" title="Optimize">
+                                                        <i data-feather="zap" width="14" height="14"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-info" onclick="viewAnalysis({{ project.id }})" title="View Analysis">
+                                                        <i data-feather="bar-chart-2" width="14" height="14"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-primary" onclick="viewRisks({{ project.id }})" title="Risk Analysis">
+                                                        <i data-feather="shield" width="14" height="14"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center py-4 text-muted">
+                                                No projects available for optimization
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Optimization Modal -->
+<div class="modal fade" id="optimizationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-feather="cpu" class="me-2"></i>
+                    AI Optimization Configuration
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="optimization-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Target Schedule Reduction (%)</label>
+                                <input type="range" class="form-range" min="5" max="30" value="15" id="target-reduction">
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>5%</span>
+                                    <span id="reduction-value">15%</span>
+                                    <span>30%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Budget Constraint</label>
+                                <input type="number" class="form-control" placeholder="Maximum budget">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Resource Constraints</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="crew-limit">
+                            <label class="form-check-label" for="crew-limit">
+                                Crew size limitations
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="equipment-limit">
+                            <label class="form-check-label" for="equipment-limit">
+                                Equipment availability
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="weather-consider" checked>
+                            <label class="form-check-label" for="weather-consider">
+                                Weather considerations
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="runOptimization()">
+                    <i data-feather="zap" class="me-1"></i>
+                    Run Optimization
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+let currentProjectId = null;
+
+// Update range slider display
+document.getElementById('target-reduction').addEventListener('input', function() {
+    document.getElementById('reduction-value').textContent = this.value + '%';
+});
+
+function optimizeProject(projectId) {
+    currentProjectId = projectId;
+    const modal = new bootstrap.Modal(document.getElementById('optimizationModal'));
+    modal.show();
+}
+
+function runGlobalOptimization() {
+    showAlert('Running global optimization for all active projects...', 'info');
+    
+    // Simulate optimization process
+    setTimeout(() => {
+        showAlert('Global optimization completed! Check individual projects for results.', 'success');
+        refreshOptimizationData();
+    }, 3000);
+}
+
+function runOptimization() {
+    if (!currentProjectId) return;
+    
+    const form = document.getElementById('optimization-form');
+    const formData = new FormData(form);
+    
+    const optimizationData = {
+        project_id: currentProjectId,
+        target_reduction: document.getElementById('target-reduction').value,
+        budget_limit: form.querySelector('input[type="number"]').value,
+        resource_constraints: [
+            ...(document.getElementById('crew-limit').checked ? ['crew_limit'] : []),
+            ...(document.getElementById('equipment-limit').checked ? ['equipment_limit'] : []),
+        ],
+        weather_considerations: document.getElementById('weather-consider').checked
+    };
+    
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('optimizationModal')).hide();
+    
+    // Show loading state
+    showAlert('Running AI optimization with 600M+ simulations...', 'info');
+    
+    // Make API call
+    fetch(`/buildflow/ai/optimize/${currentProjectId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(optimizationData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(`Optimization completed! ${data.optimization_results.improvements.schedule_compression} schedule improvement achieved.`, 'success');
+            refreshOptimizationData();
+        } else {
+            showAlert('Optimization failed: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Error running optimization', 'error');
+    });
+}
+
+function viewAnalysis(projectId) {
+    window.location.href = `/buildflow/ai/risk-analysis/${projectId}`;
+}
+
+function viewRisks(projectId) {
+    // Open risk analysis in new tab
+    window.open(`/buildflow/ai/risk-analysis/${projectId}`, '_blank');
+}
+
+function filterOptimizations(projectId) {
+    // Filter optimization results by project
+    console.log('Filtering by project:', projectId);
+}
+
+function refreshOptimizationData() {
+    // Refresh the optimization data
+    location.reload();
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

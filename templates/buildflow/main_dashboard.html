@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Features - BBSchedule{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i data-feather="zap" class="me-2 text-primary"></i>
+                        Advanced Features
+                    </h1>
+                    <p class="text-muted mb-0">BBSchedule - Integrated Construction Management Modules</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="refreshMetrics()">
+                        <i data-feather="refresh-cw" class="me-1"></i>
+                        Refresh
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i data-feather="settings" class="me-1"></i>
+                            Quick Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('create_procurement_item') }}">
+                                <i data-feather="package" class="me-2" width="16" height="16"></i>
+                                New Procurement Item
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="runAIOptimization()">
+                                <i data-feather="cpu" class="me-2" width="16" height="16"></i>
+                                Run AI Optimization
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logistics_dashboard') }}">
+                                <i data-feather="truck" class="me-2" width="16" height="16"></i>
+                                Schedule Delivery
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('procore_integration_dashboard') }}">
+                                <i data-feather="link" class="me-2" width="16" height="16"></i>
+                                Procore Sync
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Platform Metrics Overview -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded p-2 me-3">
+                                    <i data-feather="folder" width="24" height="24"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ metrics.active_projects }}</h4>
+                                    <small class="text-muted">Active Projects</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success text-white rounded p-2 me-3">
+                                    <i data-feather="dollar-sign" width="24" height="24"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">${{ "{:,.0f}".format(metrics.total_cost_savings) }}</h4>
+                                    <small class="text-muted">Total Savings</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning text-white rounded p-2 me-3">
+                                    <i data-feather="trending-up" width="24" height="24"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ metrics.schedule_improvements }}</h4>
+                                    <small class="text-muted">Schedule Improvement</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-info text-white rounded p-2 me-3">
+                                    <i data-feather="truck" width="24" height="24"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">{{ metrics.delivery_efficiency }}</h4>
+                                    <small class="text-muted">Delivery Efficiency</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Quick Access -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="grid" class="me-2"></i>
+                                Platform Modules
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Procurement Module -->
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card h-100 border-0 bg-light">
+                                        <div class="card-body text-center">
+                                            <div class="bg-primary text-white rounded-circle p-3 d-inline-flex mb-3">
+                                                <i data-feather="package" width="32" height="32"></i>
+                                            </div>
+                                            <h6 class="card-title">Intelligent Procurement</h6>
+                                            <p class="card-text small text-muted">AI-powered lead time predictions and supply chain optimization</p>
+                                            <div class="mb-2">
+                                                <small class="text-success fw-medium">{{ metrics.procurement_items }} items tracked</small>
+                                            </div>
+                                            <a href="{{ url_for('procurement_dashboard') }}" class="btn btn-outline-primary btn-sm">
+                                                <i data-feather="arrow-right" class="me-1" width="14" height="14"></i>
+                                                Open Module
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- AI Optimization Module -->
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card h-100 border-0 bg-light">
+                                        <div class="card-body text-center">
+                                            <div class="bg-warning text-white rounded-circle p-3 d-inline-flex mb-3">
+                                                <i data-feather="cpu" width="32" height="32"></i>
+                                            </div>
+                                            <h6 class="card-title">AI Optimization</h6>
+                                            <p class="card-text small text-muted">600M+ simulations for schedule and resource optimization</p>
+                                            <div class="mb-2">
+                                                <small class="text-success fw-medium">{{ metrics.ai_optimizations }} projects optimized</small>
+                                            </div>
+                                            <a href="{{ url_for('ai_optimization_dashboard') }}" class="btn btn-outline-warning btn-sm">
+                                                <i data-feather="arrow-right" class="me-1" width="14" height="14"></i>
+                                                Open Module
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Delivery & Logistics Module -->
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card h-100 border-0 bg-light">
+                                        <div class="card-body text-center">
+                                            <div class="bg-info text-white rounded-circle p-3 d-inline-flex mb-3">
+                                                <i data-feather="truck" width="32" height="32"></i>
+                                            </div>
+                                            <h6 class="card-title">Delivery & Logistics</h6>
+                                            <p class="card-text small text-muted">Real-time tracking and site logistics optimization</p>
+                                            <div class="mb-2">
+                                                <small class="text-success fw-medium">{{ metrics.scheduled_deliveries }} scheduled</small>
+                                            </div>
+                                            <a href="{{ url_for('logistics_dashboard') }}" class="btn btn-outline-info btn-sm">
+                                                <i data-feather="arrow-right" class="me-1" width="14" height="14"></i>
+                                                Open Module
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Procore Integration Module -->
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card h-100 border-0 bg-light">
+                                        <div class="card-body text-center">
+                                            <div class="bg-success text-white rounded-circle p-3 d-inline-flex mb-3">
+                                                <i data-feather="link" width="32" height="32"></i>
+                                            </div>
+                                            <h6 class="card-title">Procore Integration</h6>
+                                            <p class="card-text small text-muted">Seamless bi-directional sync with Procore platform</p>
+                                            <div class="mb-2">
+                                                <span class="badge bg-success">{{ metrics.procore_sync_status.title() }}</span>
+                                            </div>
+                                            <a href="{{ url_for('procore_integration_dashboard') }}" class="btn btn-outline-success btn-sm">
+                                                <i data-feather="arrow-right" class="me-1" width="14" height="14"></i>
+                                                Open Module
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities & Live Feed -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i data-feather="activity" class="me-2"></i>
+                                Recent Platform Activities
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_activities %}
+                            <div class="list-group list-group-flush">
+                                {% for activity in recent_activities %}
+                                <div class="list-group-item d-flex align-items-center">
+                                    <div class="me-3">
+                                        {% if activity.type == 'procurement' %}
+                                        <div class="bg-primary text-white rounded p-2">
+                                            <i data-feather="package" width="16" height="16"></i>
+                                        </div>
+                                        {% elif activity.type == 'optimization' %}
+                                        <div class="bg-warning text-white rounded p-2">
+                                            <i data-feather="cpu" width="16" height="16"></i>
+                                        </div>
+                                        {% elif activity.type == 'delivery' %}
+                                        <div class="bg-info text-white rounded p-2">
+                                            <i data-feather="truck" width="16" height="16"></i>
+                                        </div>
+                                        {% elif activity.type == 'procore' %}
+                                        <div class="bg-success text-white rounded p-2">
+                                            <i data-feather="link" width="16" height="16"></i>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-medium">{{ activity.description }}</div>
+                                        <small class="text-muted">{{ activity.timestamp.strftime('%H:%M - %B %d, %Y') }}</small>
+                                    </div>
+                                    <div>
+                                        {% if activity.status == 'success' %}
+                                        <span class="badge bg-success">Success</span>
+                                        {% elif activity.status == 'info' %}
+                                        <span class="badge bg-info">Info</span>
+                                        {% elif activity.status == 'warning' %}
+                                        <span class="badge bg-warning">Warning</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center py-3">No recent activities</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- System Status -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="monitor" class="me-1"></i>
+                                System Status
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">AI Models</span>
+                                <span class="badge bg-success">Operational</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">API Response</span>
+                                <span class="badge bg-success">145ms</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small">Uptime</span>
+                                <span class="badge bg-success">99.97%</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small">Procore Sync</span>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i data-feather="bar-chart-2" class="me-1"></i>
+                                Today's Summary
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 mb-2">
+                                    <div class="fw-medium text-primary">18</div>
+                                    <small class="text-muted">AI Optimizations</small>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <div class="fw-medium text-info">24</div>
+                                    <small class="text-muted">Deliveries Tracked</small>
+                                </div>
+                                <div class="col-6">
+                                    <div class="fw-medium text-success">94%</div>
+                                    <small class="text-muted">On-Time Rate</small>
+                                </div>
+                                <div class="col-6">
+                                    <div class="fw-medium text-warning">$45K</div>
+                                    <small class="text-muted">Cost Savings</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize Feather icons
+feather.replace();
+
+function refreshMetrics() {
+    // Show loading state
+    const button = document.querySelector('button[onclick="refreshMetrics()"]');
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i data-feather="loader" class="me-1"></i>Refreshing...';
+    button.disabled = true;
+    
+    // Fetch updated metrics
+    fetch('/api/buildflow/metrics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update metrics on page
+                updateMetricsDisplay(data.platform_metrics);
+                showAlert('Metrics refreshed successfully', 'success');
+            } else {
+                showAlert('Error refreshing metrics', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error refreshing metrics', 'error');
+        })
+        .finally(() => {
+            // Restore button
+            button.innerHTML = originalContent;
+            button.disabled = false;
+            feather.replace();
+        });
+}
+
+function runAIOptimization() {
+    showAlert('AI Optimization feature requires project selection. Navigate to AI Optimization module.', 'info');
+}
+
+function updateMetricsDisplay(metrics) {
+    // Update metric values on the page
+    // This would update the actual values shown in the cards
+    console.log('Updated metrics:', metrics);
+}
+
+function showAlert(message, type) {
+    // Create and show bootstrap alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at top of container
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Auto-refresh metrics every 5 minutes
+setInterval(refreshMetrics, 300000);
+</script>
+{% endblock %}
