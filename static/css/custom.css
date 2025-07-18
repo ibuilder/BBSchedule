@@ -7,14 +7,16 @@ body {
     color: #2c3e50;
 }
 
-/* Navigation Fixes */
+/* Navigation Fixes - Light Theme */
 .navbar {
     z-index: 1050;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    background-color: #ffffff !important;
 }
 
 .navbar-brand {
     padding: 0.5rem 0;
+    color: #2c3e50 !important;
 }
 
 .navbar-brand .bg-primary {
@@ -28,13 +30,15 @@ body {
 .navbar-brand .fw-bold {
     font-size: 1.25rem;
     line-height: 1.2;
+    color: #2c3e50;
 }
 
 .navbar-brand small {
     font-size: 0.75rem;
-    opacity: 0.8;
+    opacity: 0.7;
     line-height: 1.2;
     margin-top: 2px;
+    color: #6c757d;
 }
 
 .navbar-nav .nav-link {
@@ -43,15 +47,17 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: #495057 !important;
 }
 
 .navbar-nav .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(13, 110, 253, 0.1);
     border-radius: 4px;
+    color: #0d6efd !important;
 }
 
 .dropdown-menu {
-    border: none;
+    border: 1px solid #e9ecef;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     margin-top: 0.5rem;
@@ -63,6 +69,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: #495057;
 }
 
 .dropdown-item:hover {
@@ -81,28 +88,28 @@ body {
     margin: 0.5rem 0;
 }
 
-/* Search Box Fixes */
+/* Search Box Fixes - Light Theme */
 .search-container {
     position: relative;
     max-width: 300px;
 }
 
 .search-container .form-control {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
     padding-right: 40px;
 }
 
 .search-container .form-control:focus {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
-    color: white;
+    background-color: #ffffff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    color: #495057;
 }
 
 .search-container .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+    color: #6c757d;
 }
 
 .search-btn {
@@ -112,7 +119,7 @@ body {
     transform: translateY(-50%);
     border: none;
     background: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: #6c757d;
     padding: 0;
     width: 24px;
     height: 24px;
@@ -122,21 +129,21 @@ body {
 }
 
 .search-btn:hover {
-    color: white;
+    color: #0d6efd;
 }
 
-/* Notification Badge Fixes */
+/* Notification Badge Fixes - Light Theme */
 .notification-bell {
     position: relative;
     padding: 0.5rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: #6c757d;
     background: none;
     border: none;
 }
 
 .notification-bell:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
     border-radius: 4px;
 }
 
@@ -157,19 +164,19 @@ body {
     justify-content: center;
 }
 
-/* User Profile Fixes */
+/* User Profile Fixes - Light Theme */
 .user-profile {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: #495057 !important;
     text-decoration: none;
 }
 
 .user-profile:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: #0d6efd !important;
+    background-color: rgba(13, 110, 253, 0.1);
     border-radius: 4px;
 }
 
