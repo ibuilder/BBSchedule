@@ -1,0 +1,639 @@
+{% extends "base.html" %}
+
+{% block title %}3D Model Viewer - BBSchedule{% endblock %}
+
+{% block extra_head %}
+<!-- That Open Fragments API -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+    "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.152.2/examples/jsm/controls/OrbitControls.js",
+    "three/examples/jsm/loaders/IFCLoader": "https://unpkg.com/three@0.152.2/examples/jsm/loaders/IFCLoader.js",
+    "@thatopen/components": "https://unpkg.com/@thatopen/components@2.0.0/dist/index.js",
+    "@thatopen/fragments": "https://unpkg.com/@thatopen/fragments@1.0.4/dist/index.js",
+    "@thatopen/ui": "https://unpkg.com/@thatopen/ui@2.0.0/dist/index.js"
+  }
+}
+</script>
+
+<style>
+.model-viewer-container {
+    height: calc(100vh - 200px);
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bs-dark);
+}
+
+#model-viewer {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.viewer-controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;
+    padding: 15px;
+    min-width: 250px;
+}
+
+.viewer-tools {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.model-info {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;
+    padding: 15px;
+    max-width: 300px;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.hidden {
+    display: none;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--bs-light);
+    font-size: 0.9em;
+}
+
+.btn-viewer {
+    padding: 8px 12px;
+    margin: 2px;
+    border: none;
+    border-radius: 4px;
+    background: var(--bs-primary);
+    color: white;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.btn-viewer:hover {
+    background: var(--bs-primary-dark);
+}
+
+.btn-viewer.active {
+    background: var(--bs-success);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i data-feather="cube" class="me-2"></i>3D Model Viewer</h2>
+            <p class="text-muted">Interactive 3D viewer for construction models with fragment optimization</p>
+        </div>
+    </div>
+
+    <!-- Model Upload Section -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="upload" class="me-2"></i>Model Upload</h5>
+                </div>
+                <div class="card-body">
+                    <form id="model-upload-form" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="model-file" class="form-label">Select Model File</label>
+                                <input type="file" class="form-control" id="model-file" accept=".rvt,.ifc,.gltf,.glb">
+                                <div class="form-text">Supported formats: RVT, IFC, GLTF, GLB</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="project-select" class="form-label">Associate with Project</label>
+                                <select class="form-select" id="project-select">
+                                    <option value="">Select Project...</option>
+                                    {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i data-feather="upload" width="16" height="16" class="me-1"></i>
+                                    Upload
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D Viewer Container -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body p-0">
+                    <div class="model-viewer-container">
+                        <!-- Loading Overlay -->
+                        <div id="loading-overlay" class="loading-overlay">
+                            <div class="text-center text-light">
+                                <div class="spinner-border mb-3" role="status"></div>
+                                <h5>Loading 3D Model...</h5>
+                                <p class="text-muted">Processing fragments for optimal performance</p>
+                            </div>
+                        </div>
+
+                        <!-- 3D Viewer Canvas -->
+                        <div id="model-viewer"></div>
+
+                        <!-- Viewer Controls -->
+                        <div class="viewer-controls">
+                            <h6 class="text-light mb-3"><i data-feather="settings" width="16" height="16" class="me-1"></i>View Controls</h6>
+                            
+                            <div class="control-group">
+                                <label>View Mode</label>
+                                <div class="btn-group w-100" role="group">
+                                    <button type="button" class="btn-viewer active" data-view="perspective">3D</button>
+                                    <button type="button" class="btn-viewer" data-view="top">Top</button>
+                                    <button type="button" class="btn-viewer" data-view="front">Front</button>
+                                    <button type="button" class="btn-viewer" data-view="side">Side</button>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>Rendering</label>
+                                <div class="btn-group w-100" role="group">
+                                    <button type="button" class="btn-viewer active" data-render="solid">Solid</button>
+                                    <button type="button" class="btn-viewer" data-render="wireframe">Wire</button>
+                                    <button type="button" class="btn-viewer" data-render="points">Points</button>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>Fragments</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="fragments-enabled" checked>
+                                    <label class="form-check-label text-light" for="fragments-enabled">
+                                        Fragment Optimization
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>Transparency</label>
+                                <input type="range" class="form-range" id="transparency-slider" min="0" max="100" value="100">
+                            </div>
+                        </div>
+
+                        <!-- Viewer Tools -->
+                        <div class="viewer-tools">
+                            <h6 class="text-light mb-3"><i data-feather="tool" width="16" height="16" class="me-1"></i>Tools</h6>
+                            
+                            <button type="button" class="btn-viewer w-100 mb-2" id="measure-tool">
+                                <i data-feather="ruler" width="16" height="16" class="me-1"></i>
+                                Measure
+                            </button>
+                            
+                            <button type="button" class="btn-viewer w-100 mb-2" id="section-tool">
+                                <i data-feather="layers" width="16" height="16" class="me-1"></i>
+                                Section
+                            </button>
+                            
+                            <button type="button" class="btn-viewer w-100 mb-2" id="explode-tool">
+                                <i data-feather="maximize-2" width="16" height="16" class="me-1"></i>
+                                Explode
+                            </button>
+                            
+                            <button type="button" class="btn-viewer w-100 mb-2" id="isolate-tool">
+                                <i data-feather="eye" width="16" height="16" class="me-1"></i>
+                                Isolate
+                            </button>
+                            
+                            <button type="button" class="btn-viewer w-100" id="reset-view">
+                                <i data-feather="refresh-cw" width="16" height="16" class="me-1"></i>
+                                Reset View
+                            </button>
+                        </div>
+
+                        <!-- Model Information -->
+                        <div class="model-info">
+                            <h6 class="text-light mb-2"><i data-feather="info" width="16" height="16" class="me-1"></i>Model Info</h6>
+                            <div id="model-stats" class="text-light small">
+                                <div>Triangles: <span id="triangle-count">-</span></div>
+                                <div>Fragments: <span id="fragment-count">-</span></div>
+                                <div>Materials: <span id="material-count">-</span></div>
+                                <div>Size: <span id="model-size">-</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sample Models Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header">
+                    <h5 class="mb-0"><i data-feather="folder" class="me-2"></i>Sample Models</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100 mb-2" onclick="loadSampleModel('office')">
+                                <i data-feather="building" class="me-2"></i>
+                                Office Building
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100 mb-2" onclick="loadSampleModel('bridge')">
+                                <i data-feather="git-branch" class="me-2"></i>
+                                Bridge Structure
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100 mb-2" onclick="loadSampleModel('residential')">
+                                <i data-feather="home" class="me-2"></i>
+                                Residential Complex
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100 mb-2" onclick="loadSampleModel('industrial')">
+                                <i data-feather="anchor" class="me-2"></i>
+                                Industrial Facility
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import * as OBC from '@thatopen/components';
+import * as FRAGS from '@thatopen/fragments';
+import * as BUI from '@thatopen/ui';
+
+class ModelViewer {
+    constructor() {
+        this.components = new OBC.Components();
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.controls = null;
+        this.fragments = null;
+        this.currentModel = null;
+        
+        this.init();
+        this.setupEventListeners();
+    }
+
+    init() {
+        const container = document.getElementById('model-viewer');
+        
+        // Create scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x1a1a1a);
+
+        // Create camera
+        this.camera = new THREE.PerspectiveCamera(
+            75, 
+            container.clientWidth / container.clientHeight, 
+            0.1, 
+            1000
+        );
+        this.camera.position.set(10, 10, 10);
+
+        // Create renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(this.renderer.domElement);
+
+        // Create controls
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+
+        // Initialize fragments
+        this.fragments = new FRAGS.FragmentsManager(this.components);
+        
+        // Add lighting
+        this.setupLighting();
+        
+        // Start render loop
+        this.animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => this.onWindowResize());
+        
+        // Hide loading overlay
+        document.getElementById('loading-overlay').classList.add('hidden');
+    }
+
+    setupLighting() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        this.scene.add(ambientLight);
+
+        // Directional light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(50, 50, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        this.scene.add(directionalLight);
+
+        // Additional lights for better visibility
+        const light1 = new THREE.DirectionalLight(0xffffff, 0.3);
+        light1.position.set(-50, 50, -50);
+        this.scene.add(light1);
+
+        const light2 = new THREE.DirectionalLight(0xffffff, 0.3);
+        light2.position.set(50, -50, 50);
+        this.scene.add(light2);
+    }
+
+    setupEventListeners() {
+        // View mode controls
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.setViewMode(e.target.dataset.view);
+            });
+        });
+
+        // Render mode controls
+        document.querySelectorAll('[data-render]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-render]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.setRenderMode(e.target.dataset.render);
+            });
+        });
+
+        // Transparency slider
+        document.getElementById('transparency-slider').addEventListener('input', (e) => {
+            this.setTransparency(e.target.value / 100);
+        });
+
+        // Tool buttons
+        document.getElementById('reset-view').addEventListener('click', () => this.resetView());
+        document.getElementById('measure-tool').addEventListener('click', () => this.toggleMeasure());
+        document.getElementById('section-tool').addEventListener('click', () => this.toggleSection());
+        document.getElementById('explode-tool').addEventListener('click', () => this.toggleExplode());
+        document.getElementById('isolate-tool').addEventListener('click', () => this.toggleIsolate());
+
+        // File upload
+        document.getElementById('model-upload-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleFileUpload();
+        });
+    }
+
+    setViewMode(mode) {
+        switch(mode) {
+            case 'perspective':
+                this.camera.position.set(10, 10, 10);
+                break;
+            case 'top':
+                this.camera.position.set(0, 20, 0);
+                this.camera.lookAt(0, 0, 0);
+                break;
+            case 'front':
+                this.camera.position.set(0, 0, 20);
+                this.camera.lookAt(0, 0, 0);
+                break;
+            case 'side':
+                this.camera.position.set(20, 0, 0);
+                this.camera.lookAt(0, 0, 0);
+                break;
+        }
+        this.controls.update();
+    }
+
+    setRenderMode(mode) {
+        if (!this.currentModel) return;
+        
+        this.scene.traverse((child) => {
+            if (child.isMesh) {
+                switch(mode) {
+                    case 'solid':
+                        child.material.wireframe = false;
+                        child.material.side = THREE.FrontSide;
+                        break;
+                    case 'wireframe':
+                        child.material.wireframe = true;
+                        break;
+                    case 'points':
+                        // Convert to points representation
+                        break;
+                }
+            }
+        });
+    }
+
+    setTransparency(value) {
+        if (!this.currentModel) return;
+        
+        this.scene.traverse((child) => {
+            if (child.isMesh) {
+                child.material.transparent = value < 1;
+                child.material.opacity = value;
+            }
+        });
+    }
+
+    resetView() {
+        this.camera.position.set(10, 10, 10);
+        this.controls.reset();
+        this.controls.update();
+    }
+
+    toggleMeasure() {
+        // Implement measurement tool
+        console.log('Measure tool activated');
+    }
+
+    toggleSection() {
+        // Implement section tool
+        console.log('Section tool activated');
+    }
+
+    toggleExplode() {
+        // Implement explode view
+        console.log('Explode view activated');
+    }
+
+    toggleIsolate() {
+        // Implement isolation tool
+        console.log('Isolate tool activated');
+    }
+
+    async handleFileUpload() {
+        const fileInput = document.getElementById('model-file');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Please select a file');
+            return;
+        }
+
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        
+        try {
+            // Create form data
+            const formData = new FormData();
+            formData.append('model_file', file);
+            formData.append('project_id', document.getElementById('project-select').value);
+
+            // Upload file
+            const response = await fetch('/api/model/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                await this.loadModel(result.model_url);
+                this.updateModelStats(result.stats);
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('Failed to upload model: ' + error.message);
+        } finally {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+    }
+
+    async loadModel(url) {
+        try {
+            // Clear existing model
+            if (this.currentModel) {
+                this.scene.remove(this.currentModel);
+            }
+
+            // Load new model using fragments
+            const model = await this.fragments.load(url);
+            this.currentModel = model;
+            this.scene.add(model);
+
+            // Fit camera to model
+            this.fitCameraToModel(model);
+            
+        } catch (error) {
+            console.error('Failed to load model:', error);
+            throw error;
+        }
+    }
+
+    fitCameraToModel(model) {
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const distance = maxDim * 2;
+        
+        this.camera.position.copy(center);
+        this.camera.position.x += distance;
+        this.camera.position.y += distance;
+        this.camera.position.z += distance;
+        
+        this.camera.lookAt(center);
+        this.controls.target.copy(center);
+        this.controls.update();
+    }
+
+    updateModelStats(stats) {
+        document.getElementById('triangle-count').textContent = stats.triangles?.toLocaleString() || '-';
+        document.getElementById('fragment-count').textContent = stats.fragments?.toLocaleString() || '-';
+        document.getElementById('material-count').textContent = stats.materials || '-';
+        document.getElementById('model-size').textContent = stats.size || '-';
+    }
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    onWindowResize() {
+        const container = document.getElementById('model-viewer');
+        
+        this.camera.aspect = container.clientWidth / container.clientHeight;
+        this.camera.updateProjectionMatrix();
+        
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+}
+
+// Sample model loading
+window.loadSampleModel = async function(type) {
+    document.getElementById('loading-overlay').classList.remove('hidden');
+    
+    try {
+        const response = await fetch(`/api/model/sample/${type}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            await window.modelViewer.loadModel(result.model_url);
+            window.modelViewer.updateModelStats(result.stats);
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('Failed to load sample model:', error);
+        alert('Failed to load sample model: ' + error.message);
+    } finally {
+        document.getElementById('loading-overlay').classList.add('hidden');
+    }
+};
+
+// Initialize model viewer when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.modelViewer = new ModelViewer();
+});
+</script>
+{% endblock %}

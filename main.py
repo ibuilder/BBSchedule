@@ -7,6 +7,7 @@ import os
 import logging
 from app import app
 import routes_buildflow  # noqa: F401
+import routes_model  # noqa: F401
 
 # Configure production logging
 if not app.debug:
